@@ -95,7 +95,7 @@ extension JSONValue: ExpressibleByStringLiteral, ExpressibleByIntegerLiteral, Ex
 }
 
 public extension JSONValue {
-    init(_ string: String?) { self = string.map(JSONValue.string) ?? .null }
-    init(_ int: Int) { self = .number(Double(int)) }
-    init(_ bool: Bool) { self = .bool(bool) }
+    public init(_ string: String?) { self = string.map(JSONValue.string) ?? .null }
+    public init(_ int: Int) { self = .number(Double(int)) }
+    public init(_ bool: Bool) { self = .bool(bool) }
 }

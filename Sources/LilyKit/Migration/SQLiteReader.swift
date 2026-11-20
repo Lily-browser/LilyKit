@@ -7,16 +7,16 @@ import SQLite3
 /// written to the original. Only fixed queries written here run; nothing from the database or the
 /// user is ever put into SQL. (SQLite's C interface hands back C strings, which are copied into
 /// Swift strings immediately; that's the only pointer use here.)
-struct SQLiteReader {
-    struct Failure: LocalizedError {
-        let reason: String
-        var errorDescription: String? { reason }
+public struct SQLiteReader {
+    public struct Failure: LocalizedError {
+        public let reason: String
+        public var errorDescription: String? { reason }
     }
 
-    static let maxDatabaseBytes: Int64 = 1_000_000_000
+    public static let maxDatabaseBytes: Int64 = 1_000_000_000
 
     /// Runs `query` on a private read-only copy of `database`, calling `row` for each result row.
-    static func read(_ database: URL, query: String, row: (Row) -> Void) throws {
+    public static func read(_ database: URL, query: String, row: (Row) -> Void) throws {
         let workspace = FileManager.default.temporaryDirectory.appendingPathComponent("lily-migration-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         defer { try? FileManager.default.removeItem(at: workspace) }
@@ -50,14 +50,14 @@ struct SQLiteReader {
     }
 
     /// One result row; columns are read by position.
-    struct Row {
+    public struct Row {
         fileprivate let statement: OpaquePointer
 
-        func string(_ column: Int32) -> String? {
+        public func string(_ column: Int32) -> String? {
             sqlite3_column_text(statement, column).map { String(cString: $0) }
         }
 
-        func int(_ column: Int32) -> Int64 { sqlite3_column_int64(statement, column) }
-        func double(_ column: Int32) -> Double { sqlite3_column_double(statement, column) }
+        public func int(_ column: Int32) -> Int64 { sqlite3_column_int64(statement, column) }
+        public func double(_ column: Int32) -> Double { sqlite3_column_double(statement, column) }
     }
 }

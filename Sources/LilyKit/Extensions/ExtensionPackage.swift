@@ -7,22 +7,22 @@ import zlib
 /// they can be audited and pinned before anything runs. Reading never launches a helper (`unzip`)
 /// and never follows links: archives are parsed here with hard limits on entry count and size,
 /// and every path is checked so nothing can land outside the extension's own folder.
-struct ExtensionPackage: Sendable, Equatable {
-    static let maxEntries = 5_000
-    static let maxFileBytes = 50_000_000
-    static let maxTotalBytes = 200_000_000
+public struct ExtensionPackage: Sendable, Equatable {
+    public static let maxEntries = 5_000
+    public static let maxFileBytes = 50_000_000
+    public static let maxTotalBytes = 200_000_000
 
-    struct Invalid: LocalizedError, Equatable {
-        let reason: String
-        var errorDescription: String? { reason }
+    public struct Invalid: LocalizedError, Equatable {
+        public let reason: String
+        public var errorDescription: String? { reason }
     }
 
     /// Relative path → contents.
-    let files: [String: Data]
+    public let files: [String: Data]
 
     /// SHA-256 over every path and its contents, in path order. Stored (sealed) when the extension
     /// is pinned and checked before each load, so a changed file is never run.
-    var contentHash: String {
+    public var contentHash: String {
         var hasher = SHA256()
         for path in files.keys.sorted() {
             hasher.update(data: Data(path.utf8))
@@ -32,9 +32,9 @@ struct ExtensionPackage: Sendable, Equatable {
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
-    var manifest: Data? { files["manifest.json"] }
+    public var manifest: Data? { files["manifest.json"] }
 
-    init(files: [String: Data]) throws {
+    public init(files: [String: Data]) throws {
         // Archives often wrap everything in one top-level folder.
         var files = files
         if files["manifest.json"] == nil {
@@ -50,7 +50,7 @@ struct ExtensionPackage: Sendable, Equatable {
     // MARK: Reading
 
     /// A folder, .zip or .crx chosen by the user.
-    static func read(_ url: URL) throws -> ExtensionPackage {
+    public static func read(_ url: URL) throws -> ExtensionPackage {
         let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
         if values.isSymbolicLink == true { throw Invalid(reason: "Links can't be added as extensions.") }
         if values.isDirectory == true { return try readFolder(url) }
@@ -59,7 +59,7 @@ struct ExtensionPackage: Sendable, Equatable {
         return try ExtensionPackage(files: unzip(crxPayload(data) ?? data))
     }
 
-    static func readFolder(_ root: URL) throws -> ExtensionPackage {
+    public static func readFolder(_ root: URL) throws -> ExtensionPackage {
         let keys: [URLResourceKey] = [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
         guard let walker = FileManager.default.enumerator(at: root, includingPropertiesForKeys: keys, options: [.skipsPackageDescendants]) else {
             throw Invalid(reason: "The folder couldn't be read.")
@@ -86,7 +86,7 @@ struct ExtensionPackage: Sendable, Equatable {
 
     /// The zip inside a .crx (Chrome Web Store package): `Cr24`, a version, then signature headers.
     /// The store's signature isn't relied on; the audit and the pinned hash are what's trusted.
-    static func crxPayload(_ data: Data) -> Data? {
+    public static func crxPayload(_ data: Data) -> Data? {
         guard data.count > 16, data.prefix(4) == Data("Cr24".utf8) else { return nil }
         let version = uint32(data, 4)
         let start: Int
@@ -102,7 +102,7 @@ struct ExtensionPackage: Sendable, Equatable {
     }
 
     /// A zip archive (stored or deflated entries; no encryption, no zip64, no links).
-    static func unzip(_ archive: Data) throws -> [String: Data] {
+    public static func unzip(_ archive: Data) throws -> [String: Data] {
         let zip = archive.startIndex == 0 ? archive : Data(archive) // zero-based indices
         let bad = Invalid(reason: "The archive is damaged or uses an unsupported format.")
         guard zip.count >= 22 else { throw bad }
@@ -169,7 +169,7 @@ struct ExtensionPackage: Sendable, Equatable {
     }
 
     /// Inflates raw DEFLATE, giving up (nil) as soon as the output passes `limit` bytes.
-    static func inflate(_ input: Data, limit: Int) -> Data? {
+    public static func inflate(_ input: Data, limit: Int) -> Data? {
         var offset = 0
         do {
             let filter = try InputFilter(.decompress, using: .zlib) { length -> Data? in
@@ -189,7 +189,7 @@ struct ExtensionPackage: Sendable, Equatable {
 
     /// A relative path with no way out of the extension folder; nil when it's absolute, has `..`,
     /// empty parts, backslashes or control characters.
-    static func sanitized(_ raw: String) -> String? {
+    public static func sanitized(_ raw: String) -> String? {
         var path = raw
         while path.hasPrefix("./") { path.removeFirst(2) }
         let parts = path.split(separator: "/", omittingEmptySubsequences: false)
@@ -214,7 +214,7 @@ struct ExtensionPackage: Sendable, Equatable {
     // MARK: Pinning
 
     /// Writes the files into `folder` (created owner-only), replacing anything there.
-    func write(to folder: URL) throws {
+    public func write(to folder: URL) throws {
         let manager = FileManager.default
         try? manager.removeItem(at: folder)
         try manager.createDirectory(at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
@@ -238,8 +238,8 @@ struct ExtensionPackage: Sendable, Equatable {
 /// CRC-32 (IEEE), as zip uses, to catch damaged or doctored archive entries. The system zlib's
 /// is hardware-accelerated (a byte-at-a-time table was most of an unzip's time); the buffer is
 /// read in place, bounded by `Data`, and entries are at most `maxFileBytes`, well under `uInt`.
-enum CRC32 {
-    static func checksum(_ data: Data) -> UInt32 {
+public enum CRC32 {
+    public static func checksum(_ data: Data) -> UInt32 {
         data.withUnsafeBytes { UInt32(crc32(0, $0.bindMemory(to: Bytef.self).baseAddress, uInt($0.count))) }
     }
 }

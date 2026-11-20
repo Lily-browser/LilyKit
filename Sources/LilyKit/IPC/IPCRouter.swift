@@ -31,20 +31,20 @@ public final class IPCRouter {
     public typealias Handler = @MainActor (IPCContext, JSONValue) async throws -> JSONValue
 
     private struct Route {
-        let allowed: Set<IPCSource.Kind>
-        let handler: Handler
+        public let allowed: Set<IPCSource.Kind>
+        public let handler: Handler
     }
 
     /// Page events are small (titles, selections ≤ 20k chars); anything larger is refused unread.
     public static let maxMessageBytes = 256 * 1024
     /// Per-tab token bucket: bursts up to `burst` messages, refilled at `perSecond`. A page that
     /// churns its title or selection can't make our scripts flood native code.
-    static let burst = 60.0
-    static let perSecond = 20.0
+    public static let burst = 60.0
+    public static let perSecond = 20.0
     private var buckets: [UUID: (tokens: Double, at: Date)] = [:]
     /// The clock the buckets refill by; tests set a fixed one so the burst doesn't depend on how
     /// fast the machine runs.
-    var now: () -> Date = Date.init
+    public var now: () -> Date = Date.init
 
     private var routes: [String: Route] = [:]
     public var onUnhandledEvent: (@MainActor (IPCContext, String, JSONValue) -> Void)?

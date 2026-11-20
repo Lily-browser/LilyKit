@@ -10,14 +10,14 @@ public final class AssistantContextStore {
         public var tabID: UUID?
     }
 
-    struct TabContext {
-        var events = 0
-        var page: Visit?
-        var selection: String?
-        var videoID: String?
+    public struct TabContext {
+        public var events = 0
+        public var page: Visit?
+        public var selection: String?
+        public var videoID: String?
     }
 
-    static let maxHistory = 100
+    public static let maxHistory = 100
     private var tabs: [UUID: TabContext] = [:]
     private(set) var history: [Visit] = []
 

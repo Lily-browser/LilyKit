@@ -2,20 +2,20 @@ import Foundation
 
 /// Where every migration file read and SQLite query runs: off the main thread, one at a time.
 @globalActor
-actor MigrationActor {
-    static let shared = MigrationActor()
+public actor MigrationActor {
+    public static let shared = MigrationActor()
 }
 
 /// Finds and reads other browsers' data inside folders the user granted.
-enum MigrationEngine {
+public enum MigrationEngine {
     /// The browser's own folder inside the granted folders, if it's there. People grant different
     /// levels in the folder picker, so any of these work: `Application Support` (expected), the
     /// browser's own folder, `~/Library`, or the home folder. Safari likewise accepts `~/Library`.
-    static func locate(_ browser: SourceBrowser, in granted: [MigrationRoot: URL]) -> URL? {
+    public static func locate(_ browser: SourceBrowser, in granted: [MigrationRoot: URL]) -> URL? {
         candidates(browser, in: granted).first { isDirectory($0) && looksLikeData(browser, $0) }
     }
 
-    static func candidates(_ browser: SourceBrowser, in granted: [MigrationRoot: URL]) -> [URL] {
+    public static func candidates(_ browser: SourceBrowser, in granted: [MigrationRoot: URL]) -> [URL] {
         let relative = browser == .safari ? "Safari" : browser.relativePath
         var out: [URL] = []
         for root in Set(granted.values) {
@@ -54,7 +54,7 @@ enum MigrationEngine {
 
     /// Counts what's there, for the browser cards.
     @MigrationActor
-    static func scan(_ browser: SourceBrowser, folder: URL) throws -> BrowserScan {
+    public static func scan(_ browser: SourceBrowser, folder: URL) throws -> BrowserScan {
         switch browser.engine {
         case .chromium:
             let userData = browser.userDataPath.isEmpty ? folder : folder.appendingPathComponent(browser.userDataPath, isDirectory: true)
@@ -72,7 +72,7 @@ enum MigrationEngine {
     }
 
     @MigrationActor
-    static func readBookmarks(_ browser: SourceBrowser, folder: URL) throws -> [ImportedBookmark] {
+    public static func readBookmarks(_ browser: SourceBrowser, folder: URL) throws -> [ImportedBookmark] {
         switch browser.engine {
         case .chromium: return try chromiumProfiles(browser, folder).flatMap { try ChromiumReader.bookmarks(profile: $0) }
         case .safari: return try SafariReader.bookmarks(in: folder)
@@ -81,7 +81,7 @@ enum MigrationEngine {
     }
 
     @MigrationActor
-    static func readHistory(_ browser: SourceBrowser, folder: URL) throws -> [ImportedVisit] {
+    public static func readHistory(_ browser: SourceBrowser, folder: URL) throws -> [ImportedVisit] {
         switch browser.engine {
         case .chromium: return try chromiumProfiles(browser, folder).flatMap { try ChromiumReader.history(profile: $0) }
         case .safari: return try SafariReader.history(in: folder)
@@ -90,7 +90,7 @@ enum MigrationEngine {
     }
 
     @MigrationActor
-    static func readSpaces(_ browser: SourceBrowser, folder: URL) throws -> [ImportedSpace] {
+    public static func readSpaces(_ browser: SourceBrowser, folder: URL) throws -> [ImportedSpace] {
         browser.supportsSpaces ? try ArcSidebarReader.spaces(in: folder) : []
     }
 
@@ -100,10 +100,10 @@ enum MigrationEngine {
 }
 
 /// Combines what several browsers had, de-duplicated by normalized address.
-enum MigrationMerger {
+public enum MigrationMerger {
     /// One visit per page across all sources: the highest visit count, the latest visit, and the
     /// title from the latest visit that has one. Addresses are cleaned of tracking parameters.
-    static func mergeHistory(_ sources: [[ImportedVisit]]) -> [ImportedVisit] {
+    public static func mergeHistory(_ sources: [[ImportedVisit]]) -> [ImportedVisit] {
         var merged: [String: ImportedVisit] = [:]
         for visit in sources.joined() {
             guard let clean = URLNormalizer.clean(visit.url) else { continue }
@@ -126,7 +126,7 @@ enum MigrationMerger {
 
     /// Bookmarks as one folder per browser ("Imported from Chrome"), keeping each browser's
     /// folders. A page bookmarked in several browsers is kept once, in the first browser listed.
-    static func bookmarkFolders(_ sources: [(SourceBrowser, [ImportedBookmark])]) -> [Bookmarks.Node] {
+    public static func bookmarkFolders(_ sources: [(SourceBrowser, [ImportedBookmark])]) -> [Bookmarks.Node] {
         var seen = Set<String>()
         var folders: [Bookmarks.Node] = []
         for (browser, bookmarks) in sources {

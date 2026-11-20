@@ -1,19 +1,19 @@
 import Foundation
 
 /// Size limits shared by the readers, so an odd or hostile file can't exhaust memory.
-enum MigrationLimits {
-    static let maxFileBytes = 100_000_000
-    static let maxHistoryRows = 100_000
-    static let maxBookmarks = 100_000
-    static let maxTitle = 500
+public enum MigrationLimits {
+    public static let maxFileBytes = 100_000_000
+    public static let maxHistoryRows = 100_000
+    public static let maxBookmarks = 100_000
+    public static let maxTitle = 500
 
-    static func read(_ url: URL) throws -> Data {
+    public static func read(_ url: URL) throws -> Data {
         let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         guard size <= maxFileBytes else { throw SQLiteReader.Failure(reason: "\(url.lastPathComponent) is too large to import.") }
         return try Data(contentsOf: url)
     }
 
-    static func title(_ text: String?) -> String {
+    public static func title(_ text: String?) -> String {
         String((text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(maxTitle))
     }
 }
@@ -21,10 +21,10 @@ enum MigrationLimits {
 // MARK: - Chromium (Chrome, Arc, Dia)
 
 /// Chromium profiles: `Bookmarks` (JSON) and `History` (SQLite) in `Default`, `Profile 1`, ….
-enum ChromiumReader {
+public enum ChromiumReader {
     /// Throws when macOS refuses to list the folder (it protects some browsers' data), so that
     /// shows as a permission problem rather than "not found".
-    static func profiles(in userData: URL) throws -> [URL] {
+    public static func profiles(in userData: URL) throws -> [URL] {
         guard FileManager.default.fileExists(atPath: userData.path) else { return [] }
         let names = try FileManager.default.contentsOfDirectory(atPath: userData.path)
         return names.filter { $0 == "Default" || $0.hasPrefix("Profile ") }.sorted { ($0 == "Default" ? "" : $0) < ($1 == "Default" ? "" : $1) }
@@ -33,14 +33,14 @@ enum ChromiumReader {
                 || FileManager.default.fileExists(atPath: $0.appendingPathComponent("History").path) }
     }
 
-    static func bookmarks(profile: URL) throws -> [ImportedBookmark] {
+    public static func bookmarks(profile: URL) throws -> [ImportedBookmark] {
         let file = profile.appendingPathComponent("Bookmarks")
         guard FileManager.default.fileExists(atPath: file.path) else { return [] }
         return parseBookmarks(try MigrationLimits.read(file))
     }
 
     /// `roots.bookmark_bar`, `roots.other` and `roots.synced`, walked recursively.
-    static func parseBookmarks(_ data: Data) -> [ImportedBookmark] {
+    public static func parseBookmarks(_ data: Data) -> [ImportedBookmark] {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let roots = object["roots"] as? [String: Any] else { return [] }
         var out: [ImportedBookmark] = []
@@ -63,7 +63,7 @@ enum ChromiumReader {
         return out
     }
 
-    static func history(profile: URL) throws -> [ImportedVisit] {
+    public static func history(profile: URL) throws -> [ImportedVisit] {
         let file = profile.appendingPathComponent("History")
         guard FileManager.default.fileExists(atPath: file.path) else { return [] }
         var out: [ImportedVisit] = []
@@ -78,7 +78,7 @@ enum ChromiumReader {
     }
 
     /// Throws when the database exists but can't be read, so the card says why instead of "not found".
-    static func historyCount(profile: URL) throws -> Int {
+    public static func historyCount(profile: URL) throws -> Int {
         let file = profile.appendingPathComponent("History")
         guard FileManager.default.fileExists(atPath: file.path) else { return 0 }
         var count = 0
@@ -87,7 +87,7 @@ enum ChromiumReader {
     }
 
     /// Chromium times are microseconds since 1601-01-01 UTC.
-    static func date(webKitMicros value: Int64) -> Date {
+    public static func date(webKitMicros value: Int64) -> Date {
         Date(timeIntervalSince1970: Double(value) / 1_000_000 - 11_644_473_600)
     }
 }
@@ -95,15 +95,15 @@ enum ChromiumReader {
 // MARK: - Safari
 
 /// `Bookmarks.plist` (binary property list) and `History.db` (SQLite) in `~/Library/Safari`.
-enum SafariReader {
-    static func bookmarks(in folder: URL) throws -> [ImportedBookmark] {
+public enum SafariReader {
+    public static func bookmarks(in folder: URL) throws -> [ImportedBookmark] {
         let file = folder.appendingPathComponent("Bookmarks.plist")
         guard FileManager.default.fileExists(atPath: file.path) else { return [] }
         return parseBookmarks(try MigrationLimits.read(file))
     }
 
     /// Walks `Children`, keeping `WebBookmarkTypeLeaf` entries and naming Safari's built-in lists.
-    static func parseBookmarks(_ data: Data) -> [ImportedBookmark] {
+    public static func parseBookmarks(_ data: Data) -> [ImportedBookmark] {
         guard let root = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else { return [] }
         var out: [ImportedBookmark] = []
         let builtIn = ["BookmarksBar": "Favorites", "BookmarksMenu": "Bookmarks Menu", "com.apple.ReadingList": "Reading List"]
@@ -126,7 +126,7 @@ enum SafariReader {
         return out
     }
 
-    static func history(in folder: URL) throws -> [ImportedVisit] {
+    public static func history(in folder: URL) throws -> [ImportedVisit] {
         let file = folder.appendingPathComponent("History.db")
         guard FileManager.default.fileExists(atPath: file.path) else { return [] }
         var latest: [String: ImportedVisit] = [:]
@@ -142,7 +142,7 @@ enum SafariReader {
         return latest.values.sorted { $0.lastVisit > $1.lastVisit }
     }
 
-    static func historyCount(in folder: URL) throws -> Int {
+    public static func historyCount(in folder: URL) throws -> Int {
         let file = folder.appendingPathComponent("History.db")
         guard FileManager.default.fileExists(atPath: file.path) else { return 0 }
         var count = 0
@@ -154,8 +154,8 @@ enum SafariReader {
 // MARK: - Firefox family (Zen)
 
 /// `places.sqlite` in each profile under `Profiles/`.
-enum FirefoxReader {
-    static func profiles(in folder: URL) throws -> [URL] {
+public enum FirefoxReader {
+    public static func profiles(in folder: URL) throws -> [URL] {
         let base = folder.appendingPathComponent("Profiles", isDirectory: true)
         guard FileManager.default.fileExists(atPath: base.path) else { return [] }
         let names = try FileManager.default.contentsOfDirectory(atPath: base.path)
@@ -163,7 +163,7 @@ enum FirefoxReader {
             .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("places.sqlite").path) }
     }
 
-    static func bookmarks(profile: URL) throws -> [ImportedBookmark] {
+    public static func bookmarks(profile: URL) throws -> [ImportedBookmark] {
         struct Row { let id: Int64; let type: Int64; let parent: Int64; let title: String; let url: String?; let guid: String }
         var rows: [Row] = []
         try SQLiteReader.read(profile.appendingPathComponent("places.sqlite"), query: """
@@ -195,7 +195,7 @@ enum FirefoxReader {
         }
     }
 
-    static func history(profile: URL) throws -> [ImportedVisit] {
+    public static func history(profile: URL) throws -> [ImportedVisit] {
         var out: [ImportedVisit] = []
         try SQLiteReader.read(profile.appendingPathComponent("places.sqlite"), query: """
             SELECT url, title, visit_count, last_visit_date FROM moz_places
@@ -208,7 +208,7 @@ enum FirefoxReader {
         return out
     }
 
-    static func counts(profile: URL) throws -> (bookmarks: Int, history: Int) {
+    public static func counts(profile: URL) throws -> (bookmarks: Int, history: Int) {
         var bookmarks = 0, history = 0
         let file = profile.appendingPathComponent("places.sqlite")
         try SQLiteReader.read(file, query: "SELECT (SELECT COUNT(*) FROM moz_bookmarks WHERE type = 1), (SELECT COUNT(*) FROM moz_places WHERE visit_count > 0)") {
@@ -223,16 +223,16 @@ enum FirefoxReader {
 /// Arc's spaces and their pinned and unpinned tabs, from `StorableSidebar.json`. The format is
 /// private, so it's read leniently: spaces list their containers, items reference their children,
 /// and tabs carry `data.tab.savedURL`. Anything unrecognized is skipped.
-enum ArcSidebarReader {
-    static let maxTabs = 500
+public enum ArcSidebarReader {
+    public static let maxTabs = 500
 
-    static func spaces(in arcFolder: URL) throws -> [ImportedSpace] {
+    public static func spaces(in arcFolder: URL) throws -> [ImportedSpace] {
         let file = arcFolder.appendingPathComponent("StorableSidebar.json")
         guard FileManager.default.fileExists(atPath: file.path) else { return [] }
         return parse(try MigrationLimits.read(file))
     }
 
-    static func parse(_ data: Data) -> [ImportedSpace] {
+    public static func parse(_ data: Data) -> [ImportedSpace] {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let containers = (object["sidebar"] as? [String: Any])?["containers"] as? [Any] else { return [] }
         var items: [String: [String: Any]] = [:]

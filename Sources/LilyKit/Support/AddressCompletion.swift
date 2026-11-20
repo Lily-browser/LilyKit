@@ -12,55 +12,55 @@ import Foundation
 /// **Frecency**: each visit counts more the more recent it is (100 within 4 days, 70 within two
 /// weeks, 50 within a month, 30 within three months, 10 after that); a bookmark adds 100 and an
 /// open tab 50. Candidates and history suggestions are ranked by it.
-enum AddressCompletion {
+public enum AddressCompletion {
     /// What the field shows: exactly what was typed, then the completed rest (selected).
-    struct Completion: Equatable, Sendable {
-        let typed: String
-        let text: String
-        let url: URL
+    public struct Completion: Equatable, Sendable {
+        public let typed: String
+        public let text: String
+        public let url: URL
 
         /// The completed part, in UTF-16 units from the end of `typed` (for NSTextView's selection).
-        var selectedRange: NSRange {
+        public var selectedRange: NSRange {
             let start = (typed as NSString).length
             return NSRange(location: start, length: (text as NSString).length - start)
         }
     }
 
-    struct Candidate: Equatable, Sendable {
+    public struct Candidate: Equatable, Sendable {
         /// What the field shows after the typed prefix: host (and path), without scheme or "www.".
-        let display: String
+        public let display: String
         /// `display` lowercased, for matching.
-        let key: String
-        let url: URL
-        let score: Double
+        public let key: String
+        public let url: URL
+        public let score: Double
         /// Visited twice, bookmarked or open: allowed to complete inline.
-        let qualifies: Bool
+        public let qualifies: Bool
         /// The page's title, or the site's root page title (empty when unknown).
-        let title: String
+        public let title: String
     }
 
     /// Built once per command bar (off the main actor) from history, bookmarks and open tabs.
-    struct Index: Sendable {
+    public struct Index: Sendable {
         /// One per site (host without "www."), best first.
-        var sites: [Candidate] = []
+        public var sites: [Candidate] = []
         /// One per page without a query string, best first.
-        var pages: [Candidate] = []
+        public var pages: [Candidate] = []
         /// Frecency per exact page address, for ranking history suggestions.
-        var pageScores: [URL: Double] = [:]
+        public var pageScores: [URL: Double] = [:]
 
-        static let empty = Index()
+        public static let empty = Index()
     }
 
-    struct Visit: Sendable {
-        let url: URL
-        let title: String
-        let date: Date
+    public struct Visit: Sendable {
+        public let url: URL
+        public let title: String
+        public let date: Date
     }
 
-    static let bookmarkBonus = 100.0
-    static let tabBonus = 50.0
+    public static let bookmarkBonus = 100.0
+    public static let tabBonus = 50.0
 
-    static func weight(age: TimeInterval) -> Double {
+    public static func weight(age: TimeInterval) -> Double {
         switch age / 86_400 {
         case ..<4: return 100
         case ..<14: return 70
@@ -71,7 +71,7 @@ enum AddressCompletion {
     }
 
     /// Lowercased host without "www.", or nil for anything but http(s).
-    static func site(of url: URL) -> String? {
+    public static func site(of url: URL) -> String? {
         guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http",
               let host = url.host?.lowercased(), !host.isEmpty else { return nil }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
@@ -79,13 +79,13 @@ enum AddressCompletion {
 
     /// "github.com/pwngoblin/lily" for a page (original case), nil for non-http(s) or pages with a
     /// query string (search results and the like aren't completed to).
-    static func pageDisplay(of url: URL) -> String? {
+    public static func pageDisplay(of url: URL) -> String? {
         guard let site = site(of: url), url.query == nil else { return nil }
         let path = url.path(percentEncoded: true)
         return site + (path.isEmpty ? "/" : path)
     }
 
-    static func index(visits: [Visit], bookmarks: [URL], tabs: [URL], now: Date) -> Index {
+    public static func index(visits: [Visit], bookmarks: [URL], tabs: [URL], now: Date) -> Index {
         struct Tally { var score = 0.0; var count = 0; var pinned = false; var title = ""; var titleDate = Date.distantPast }
         var pages: [URL: Tally] = [:]
         for visit in visits where site(of: visit.url) != nil {
@@ -138,14 +138,14 @@ enum AddressCompletion {
 
     /// Higher score first; then the shorter (more general) address; then alphabetical, so the
     /// order never depends on dictionary order.
-    static func better(_ a: Candidate, _ b: Candidate) -> Bool {
+    public static func better(_ a: Candidate, _ b: Candidate) -> Bool {
         if a.score != b.score { return a.score > b.score }
         if a.key.count != b.key.count { return a.key.count < b.key.count }
         return a.key < b.key
     }
 
     /// Splits off a leading "http(s)://" and "www.", which are kept as typed but not matched.
-    static func split(_ typed: String) -> (prefix: String, rest: Substring) {
+    public static func split(_ typed: String) -> (prefix: String, rest: Substring) {
         var rest = Substring(typed)
         for scheme in ["https://", "http://"] where rest.lowercased().hasPrefix(scheme) {
             rest = rest.dropFirst(scheme.count)
@@ -157,7 +157,7 @@ enum AddressCompletion {
 
     /// The inline completion for `typed`, or nil. Host completion until the text has a "/", then
     /// path completion; never for text with whitespace or when nothing is left to add.
-    static func complete(_ typed: String, in index: Index) -> Completion? {
+    public static func complete(_ typed: String, in index: Index) -> Completion? {
         guard !typed.isEmpty, !typed.contains(where: { $0.isWhitespace || $0.isNewline }) else { return nil }
         let (_, rest) = split(typed)
         guard !rest.isEmpty else { return nil }
@@ -181,14 +181,14 @@ enum AddressCompletion {
     }
 
     /// True when `url`'s site starts with what was typed ("you" → youtube.com).
-    static func hostStarts(_ url: URL?, with needle: String) -> Bool {
+    public static func hostStarts(_ url: URL?, with needle: String) -> Bool {
         guard let url, let site = site(of: url) else { return false }
         let rest = split(needle).rest.lowercased()
         return !rest.isEmpty && site.hasPrefix(rest)
     }
 
     /// Stable re-ranking of matches: sites whose host starts with the query first, then by score.
-    static func rank<T>(_ items: [T], url: (T) -> URL?, query: String, score: (URL) -> Double) -> [T] {
+    public static func rank<T>(_ items: [T], url: (T) -> URL?, query: String, score: (URL) -> Double) -> [T] {
         items.enumerated()
             .map { (item: $0.element, index: $0.offset, prefix: hostStarts(url($0.element), with: query),
                     score: url($0.element).map(score) ?? 0) }
@@ -201,7 +201,7 @@ enum AddressCompletion {
     }
 
     /// Most visited sites for an empty command bar: one row per site, best first.
-    static func topSites(_ index: Index, excluding current: URL?, limit: Int) -> [Candidate] {
+    public static func topSites(_ index: Index, excluding current: URL?, limit: Int) -> [Candidate] {
         let skip = current.flatMap(site(of:))
         return Array(index.sites.lazy.filter { $0.key != skip }.prefix(limit))
     }

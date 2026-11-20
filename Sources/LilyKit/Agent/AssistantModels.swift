@@ -215,8 +215,8 @@ public enum AssistantEvent: Sendable, Equatable {
 }
 
 public extension IPCError {
-    static func ollamaUnavailable(_ message: String) -> IPCError { IPCError("ollama_unavailable", message) }
-    static func ollamaError(_ message: String) -> IPCError { IPCError("ollama_error", message) }
-    static func noModel(_ message: String) -> IPCError { IPCError("no_model", message) }
-    static let cancelled = IPCError("cancelled", "Request cancelled")
+    public static func ollamaUnavailable(_ message: String) -> IPCError { IPCError("ollama_unavailable", message) }
+    public static func ollamaError(_ message: String) -> IPCError { IPCError("ollama_error", message) }
+    public static func noModel(_ message: String) -> IPCError { IPCError("no_model", message) }
+    public static let cancelled = IPCError("cancelled", "Request cancelled")
 }

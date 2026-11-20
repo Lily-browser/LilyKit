@@ -3,24 +3,24 @@ import Foundation
 /// A static review of an extension's files before it's installed: what it may run, what it can
 /// reach, and where it sends data. Anything that would let it load code from the network blocks
 /// installation; risky but common patterns are shown to the user as warnings.
-struct ExtensionAudit: Sendable, Equatable {
-    enum Severity: Int, Sendable, Comparable {
+public struct ExtensionAudit: Sendable, Equatable {
+    public enum Severity: Int, Sendable, Comparable {
         case info, warning, blocked
-        static func < (a: Severity, b: Severity) -> Bool { a.rawValue < b.rawValue }
+        public static func < (a: Severity, b: Severity) -> Bool { a.rawValue < b.rawValue }
     }
 
-    struct Finding: Sendable, Hashable {
-        let severity: Severity
-        let title: String
+    public struct Finding: Sendable, Hashable {
+        public let severity: Severity
+        public let title: String
         /// Where it was seen (files, hosts, permissions), shortened for display.
-        let detail: String
+        public let detail: String
     }
 
-    let findings: [Finding]
-    var isBlocked: Bool { findings.contains { $0.severity == .blocked } }
+    public let findings: [Finding]
+    public var isBlocked: Bool { findings.contains { $0.severity == .blocked } }
 
     /// Analytics and error-reporting services that extensions commonly phone home to.
-    static let telemetryHosts = [
+    public static let telemetryHosts = [
         "google-analytics.com", "googletagmanager.com", "analytics.google.com", "doubleclick.net", "mixpanel.com",
         "segment.io", "segment.com", "amplitude.com", "sentry.io", "bugsnag.com", "hotjar.com", "datadoghq.com",
         "newrelic.com", "nr-data.net", "posthog.com", "heap.io", "heapanalytics.com", "app-measurement.com",
@@ -29,7 +29,7 @@ struct ExtensionAudit: Sendable, Equatable {
     ]
 
     /// Permissions that reach beyond the pages the extension is used on.
-    static let sensitivePermissions: Set<String> = [
+    public static let sensitivePermissions: Set<String> = [
         "cookies", "history", "webRequest", "webRequestBlocking", "debugger", "management", "proxy", "privacy",
         "declarativeNetRequestFeedback", "clipboardRead", "downloads", "tabCapture", "desktopCapture", "nativeMessaging",
         "browsingData", "topSites", "bookmarks", "pageCapture", "identity", "webNavigation", "scripting",
@@ -39,7 +39,7 @@ struct ExtensionAudit: Sendable, Equatable {
     ]
 
     /// Permissions that run code which was never part of the audited, pinned files.
-    static let blockedPermissions: Set<String> = ["userScripts"]
+    public static let blockedPermissions: Set<String> = ["userScripts"]
 
     /// Key listeners in a content script see what you type on every page it runs on (password
     /// managers need this; a keylogger is the same code).
@@ -68,7 +68,7 @@ struct ExtensionAudit: Sendable, Equatable {
     /// Hosts kept per file for the "Mentions these servers" note; telemetry is checked on every URL.
     private static let maxHostsPerFile = 2_000
 
-    static func scan(_ package: ExtensionPackage) -> ExtensionAudit {
+    public static func scan(_ package: ExtensionPackage) -> ExtensionAudit {
         var findings: [Finding] = []
         guard let manifest = ExtensionManifest.parse(package) else {
             return ExtensionAudit(findings: [Finding(severity: .blocked, title: "manifest.json isn't valid", detail: "manifest.json")])
@@ -112,7 +112,7 @@ struct ExtensionAudit: Sendable, Equatable {
 
     // MARK: Manifest
 
-    static func review(manifest: ExtensionManifest) -> [Finding] {
+    public static func review(manifest: ExtensionManifest) -> [Finding] {
         var findings: [Finding] = []
         if manifest.manifestVersion < 3 {
             findings.append(Finding(severity: .info, title: "Uses the older Manifest V2 format", detail: "manifest_version \(manifest.manifestVersion)"))
@@ -160,7 +160,7 @@ struct ExtensionAudit: Sendable, Equatable {
         return findings
     }
 
-    static func directive(_ name: String, in policy: String) -> String? {
+    public static func directive(_ name: String, in policy: String) -> String? {
         for part in policy.split(separator: ";") {
             let trimmed = part.trimmingCharacters(in: .whitespaces)
             if trimmed.lowercased().hasPrefix(name + " ") || trimmed.lowercased() == name { return String(trimmed.dropFirst(name.count)) }
@@ -177,13 +177,13 @@ struct ExtensionAudit: Sendable, Equatable {
         "opensource.org", "mozilla.org", "creativecommons.org", "unicode.org", "tc39.es", "npms.io", "feross.org",
     ]
 
-    static func isTelemetry(_ host: String) -> Bool { telemetryHosts.contains { host == $0 || host.hasSuffix("." + $0) } }
+    public static func isTelemetry(_ host: String) -> Bool { telemetryHosts.contains { host == $0 || host.hasSuffix("." + $0) } }
 
     /// Telemetry hosts on lines that actually send something (fetch, beacons, XHR, pixels). Ad
     /// blockers list the same hosts as things to block; those lines don't make requests.
-    static func telemetryCalls(in text: String) -> Set<String> { urls(in: text as NSString).telemetry }
+    public static func telemetryCalls(in text: String) -> Set<String> { urls(in: text as NSString).telemetry }
 
-    static func remoteHosts(in text: String) -> Set<String> { urls(in: text as NSString).hosts }
+    public static func remoteHosts(in text: String) -> Set<String> { urls(in: text as NSString).hosts }
 
     /// One pass over the URLs in `text`: the hosts it mentions (the first `maxHostsPerFile`), and
     /// the telemetry hosts on lines that send something.

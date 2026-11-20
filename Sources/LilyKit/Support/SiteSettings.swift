@@ -16,7 +16,7 @@ public final class SiteSettings {
         /// Always light, even when macOS is in Dark Mode.
         case light
 
-        var title: String {
+        public var title: String {
             switch self {
             case .standard: return "Default"
             case .dark: return "Dark"
@@ -28,7 +28,7 @@ public final class SiteSettings {
 
     public enum Permission: String, Codable, CaseIterable, Sendable {
         case ask, allow, deny
-        var title: String { rawValue.capitalized }
+        public var title: String { rawValue.capitalized }
     }
 
     public struct Site: Codable, Equatable, Sendable {
@@ -40,7 +40,7 @@ public final class SiteSettings {
         /// true: ads and trackers are allowed on this site.
         public var adsAllowed: Bool?
 
-        var isEmpty: Bool { self == Site() }
+        public var isEmpty: Bool { self == Site() }
     }
 
     public private(set) var sites: [String: Site] = [:]
@@ -64,7 +64,7 @@ public final class SiteSettings {
     }
 
     /// `www.example.com` and `example.com` share settings.
-    nonisolated static func key(for url: URL?) -> String? {
+    public nonisolated static func key(for url: URL?) -> String? {
         guard let host = url?.host?.lowercased(), url?.scheme == "https" || url?.scheme == "http" else { return nil }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
@@ -72,7 +72,7 @@ public final class SiteSettings {
     /// What decisions are stored under: the host, plus ":port" for a non-default port and "http://" for
     /// plain HTTP, so another origin of the same host never inherits a camera, microphone or script
     /// decision. (`www.` still merges with the bare host.)
-    nonisolated static func storageKey(for url: URL?) -> String? {
+    public nonisolated static func storageKey(for url: URL?) -> String? {
         guard let host = key(for: url), let url else { return nil }
         var out = url.scheme == "http" ? "http://" + host : host
         if let port = url.port, port != (url.scheme == "http" ? 80 : 443) { out += ":\(port)" }
@@ -123,27 +123,27 @@ public final class SiteSettings {
 
     /// The zoom levels ⌘− / ⌘+, the site-settings popover and Settings → Websites → Default zoom
     /// all use, Safari-like.
-    nonisolated static let zoomLevels: [Double] = [0.5, 0.67, 0.75, 0.85, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0]
+    public nonisolated static let zoomLevels: [Double] = [0.5, 0.67, 0.75, 0.85, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0]
 
     /// The next level from `current` in a direction. A zoom between levels (an older step, a
     /// stored site zoom) goes to the nearest level that way; at either end it stays put.
-    nonisolated static func zoomLevel(after current: Double, zoomingIn: Bool) -> Double {
+    public nonisolated static func zoomLevel(after current: Double, zoomingIn: Bool) -> Double {
         let tolerance = 0.005
         if zoomingIn { return zoomLevels.first { $0 > current + tolerance } ?? max(current, zoomLevels[zoomLevels.count - 1]) }
         return zoomLevels.last { $0 < current - tolerance } ?? min(current, zoomLevels[0])
     }
 
     /// True at the smallest or largest level (or beyond it).
-    nonisolated static func isZoomLimit(_ zoom: Double) -> Bool {
+    public nonisolated static func isZoomLimit(_ zoom: Double) -> Bool {
         zoom <= zoomLevels[0] + 0.005 || zoom >= zoomLevels[zoomLevels.count - 1] - 0.005
     }
 
-    static var defaultZoom: Double {
+    public static var defaultZoom: Double {
         let stored = UserDefaults.standard.double(forKey: Preferences.Key.defaultZoom)
         return stored > 0 ? stored : 1
     }
 
-    static var defaultDarkMode: DarkMode {
+    public static var defaultDarkMode: DarkMode {
         UserDefaults.standard.string(forKey: Preferences.Key.defaultDarkMode).flatMap(DarkMode.init(rawValue:)) ?? .standard
     }
 

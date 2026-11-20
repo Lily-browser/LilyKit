@@ -3,63 +3,63 @@ import Foundation
 /// Schemas for page → native events. They arrive through our own injections, but those read
 /// attacker-controlled DOM, so every field is treated as untrusted: decoded into a fixed shape,
 /// length-bounded, and URLs must belong to the frame's security origin (set by WebKit, not the page).
-enum PagePayload {
-    static let maxTitle = 1_000
-    static let maxURL = 4_096
-    static let maxSelection = 20_000
-    static let maxMessage = 500
+public enum PagePayload {
+    public static let maxTitle = 1_000
+    public static let maxURL = 4_096
+    public static let maxSelection = 20_000
+    public static let maxMessage = 500
 
-    struct DidChange: Decodable {
-        var url: String
-        var title: String?
-        var description: String?
-        var favicon: String?
-        var themeColor: String?
+    public struct DidChange: Decodable {
+        public var url: String
+        public var title: String?
+        public var description: String?
+        public var favicon: String?
+        public var themeColor: String?
     }
 
-    struct Selection: Decodable {
-        var url: String
-        var text: String
-        var truncated: Bool?
+    public struct Selection: Decodable {
+        public var url: String
+        public var text: String
+        public var truncated: Bool?
     }
 
-    struct SelectionCleared: Decodable {
-        var url: String
+    public struct SelectionCleared: Decodable {
+        public var url: String
     }
 
     /// Text typed into a long field (`form-recovery.js`).
-    struct FormSnapshot: Decodable {
-        var url: String
-        var field: String
-        var text: String
+    public struct FormSnapshot: Decodable {
+        public var url: String
+        public var field: String
+        public var text: String
     }
 
     /// Where a linked split pane is scrolled to, as fractions of how far it can scroll.
-    struct ScrollPosition: Decodable {
-        var x: Double
-        var y: Double
+    public struct ScrollPosition: Decodable {
+        public var x: Double
+        public var y: Double
 
-        var clamped: JSONValue {
+        public var clamped: JSONValue {
             let fraction = { (v: Double) in v.isFinite ? min(1, max(0, v)) : 0 }
             return ["x": .number(fraction(x)), "y": .number(fraction(y))]
         }
     }
 
-    struct FormClear: Decodable {
-        var url: String
-        var field: String
+    public struct FormClear: Decodable {
+        public var url: String
+        public var field: String
     }
 
     /// A request that carries nothing: `null` or `{}`, and nothing else.
-    struct Empty: Decodable {
+    public struct Empty: Decodable {
         private struct AnyKey: CodingKey {
-            var stringValue: String
-            var intValue: Int? { nil }
-            init?(stringValue: String) { self.stringValue = stringValue }
-            init?(intValue: Int) { nil }
+            public var stringValue: String
+            public var intValue: Int? { nil }
+            public init?(stringValue: String) { self.stringValue = stringValue }
+            public init?(intValue: Int) { nil }
         }
 
-        init(from decoder: Decoder) throws {
+        public init(from decoder: Decoder) throws {
             if let single = try? decoder.singleValueContainer(), single.decodeNil() { return }
             guard try decoder.container(keyedBy: AnyKey.self).allKeys.isEmpty else {
                 throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Expected no payload"))
@@ -67,33 +67,33 @@ enum PagePayload {
         }
     }
 
-    struct VideoChanged: Decodable {
-        var videoId: String?
-        var url: String
+    public struct VideoChanged: Decodable {
+        public var videoId: String?
+        public var url: String
     }
 
-    struct RuntimeError: Decodable {
-        var message: String?
-        var source: String?
-        var line: Int?
-        var column: Int?
+    public struct RuntimeError: Decodable {
+        public var message: String?
+        public var source: String?
+        public var line: Int?
+        public var column: Int?
     }
 
     /// Validated page metadata, safe to show and to store.
-    struct Metadata: Equatable {
-        var url: URL
-        var title: String?
-        var favicon: URL?
-        var themeColor: String?
-        var description: String?
+    public struct Metadata: Equatable {
+        public var url: URL
+        public var title: String?
+        public var favicon: URL?
+        public var themeColor: String?
+        public var description: String?
 
-        var json: JSONValue {
+        public var json: JSONValue {
             ["url": .string(url.absoluteString), "title": JSONValue(title), "favicon": JSONValue(favicon?.absoluteString),
              "themeColor": JSONValue(themeColor), "description": JSONValue(description)]
         }
     }
 
-    static func metadata(_ p: DidChange, origin: URL?) throws -> Metadata {
+    public static func metadata(_ p: DidChange, origin: URL?) throws -> Metadata {
         let url = try sameOrigin(p.url, origin: origin)
         let favicon = p.favicon.flatMap { raw -> URL? in
             guard raw.count <= maxURL, let u = URL(string: raw), u.scheme == "https" || u.scheme == "http" else { return nil }
@@ -106,12 +106,12 @@ enum PagePayload {
                         description: bounded(p.description, maxTitle))
     }
 
-    static func selection(_ p: Selection, origin: URL?) throws -> (url: URL, text: String) {
+    public static func selection(_ p: Selection, origin: URL?) throws -> (url: URL, text: String) {
         (try sameOrigin(p.url, origin: origin), String(p.text.prefix(maxSelection)))
     }
 
     /// YouTube ids are 11 URL-safe characters; accepted only from YouTube's own origin.
-    static func videoID(_ p: VideoChanged, origin: URL?) throws -> String? {
+    public static func videoID(_ p: VideoChanged, origin: URL?) throws -> String? {
         let url = try sameOrigin(p.url, origin: origin)
         guard let host = url.host?.lowercased(), host == "youtube.com" || host.hasSuffix(".youtube.com") else {
             throw IPCError.invalidParams("Video events are only accepted from YouTube")
@@ -123,7 +123,7 @@ enum PagePayload {
 
     /// The URL a page reports must match the frame's real origin (scheme, host, port). Without an
     /// origin from WebKit there's nothing to check it against, so it's refused (fail closed).
-    static func sameOrigin(_ raw: String, origin: URL?) throws -> URL {
+    public static func sameOrigin(_ raw: String, origin: URL?) throws -> URL {
         guard raw.count <= maxURL, let url = URL(string: raw), let scheme = url.scheme?.lowercased() else {
             throw IPCError.invalidParams("Invalid page URL")
         }
@@ -136,14 +136,14 @@ enum PagePayload {
     }
 
     /// A draft's field key and text, within FormDrafts' limits.
-    static func formDraft(field: String, text: String?) throws -> (field: String, text: String) {
+    public static func formDraft(field: String, text: String?) throws -> (field: String, text: String) {
         guard !field.isEmpty, field.count <= FormDrafts.maxFieldKey else { throw IPCError.invalidParams("Bad field") }
         let text = text ?? ""
         guard text.count <= FormDrafts.maxCharacters else { throw IPCError.invalidParams("Text too long") }
         return (field, text)
     }
 
-    static func bounded(_ value: String?, _ max: Int) -> String? {
+    public static func bounded(_ value: String?, _ max: Int) -> String? {
         guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
         return String(trimmed.prefix(max))
     }
@@ -167,7 +167,7 @@ extension IPCRouter {
 
 extension IPCSource {
     /// Builds the origin URL WebKit reports for a frame (`WKSecurityOrigin`), never the page's own claim.
-    static func originURL(protocol scheme: String, host: String, port: Int) -> URL? {
+    public static func originURL(protocol scheme: String, host: String, port: Int) -> URL? {
         guard !scheme.isEmpty else { return nil }
         var parts = URLComponents()
         parts.scheme = scheme

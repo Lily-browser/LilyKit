@@ -18,7 +18,7 @@ public enum CertificatePinning {
 
     /// `SecKeyCopyExternalRepresentation` returns the bare key (X9.63 point or PKCS#1), not SPKI,
     /// so the DER wrapper is rebuilt here; hashing the bare key would never match standard pins.
-    static func subjectPublicKeyInfo(of key: SecKey) -> Data? {
+    public static func subjectPublicKeyInfo(of key: SecKey) -> Data? {
         guard let raw = SecKeyCopyExternalRepresentation(key, nil) as Data?,
               let attributes = SecKeyCopyAttributes(key) as? [CFString: Any],
               let type = attributes[kSecAttrKeyType] as? String else { return nil }
@@ -38,7 +38,7 @@ public enum CertificatePinning {
         return nil
     }
 
-    static func der(_ tag: UInt8, _ content: Data) -> Data {
+    public static func der(_ tag: UInt8, _ content: Data) -> Data {
         var out = Data([tag])
         if content.count < 0x80 {
             out.append(UInt8(content.count))
@@ -52,7 +52,7 @@ public enum CertificatePinning {
 
     /// System trust first (chain, hostname, expiry, revocation, Certificate Transparency); then, when
     /// pins are configured, at least one certificate in the chain must carry a pinned key.
-    static func evaluate(_ trust: SecTrust, pins: Set<String>) -> Bool {
+    public static func evaluate(_ trust: SecTrust, pins: Set<String>) -> Bool {
         guard SecTrustEvaluateWithError(trust, nil) else { return false }
         guard !pins.isEmpty else { return true }
         let chain = (SecTrustCopyCertificateChain(trust) as? [SecCertificate]) ?? []
@@ -77,9 +77,9 @@ public enum CertificatePinning {
     private final class ChainRecorder: NSObject, URLSessionDelegate, @unchecked Sendable {
         private let lock = NSLock()
         private var recorded: [String] = []
-        var pins: [String] { lock.withLock { recorded } }
+        public var pins: [String] { lock.withLock { recorded } }
 
-        func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+        public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
             guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
                   let trust = challenge.protectionSpace.serverTrust else { return (.performDefaultHandling, nil) }
             guard SecTrustEvaluateWithError(trust, nil) else { return (.cancelAuthenticationChallenge, nil) }
@@ -92,14 +92,14 @@ public enum CertificatePinning {
 
 /// URLSession delegate that enforces `CertificatePinning.evaluate`. Never accepts a chain the
 /// system rejects, and offers no override.
-final class PinningSessionDelegate: NSObject, URLSessionDelegate, Sendable {
-    let pins: Set<String>
+public final class PinningSessionDelegate: NSObject, URLSessionDelegate, Sendable {
+    public let pins: Set<String>
 
-    init(pins: Set<String>) {
+    public init(pins: Set<String>) {
         self.pins = pins
     }
 
-    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
               let trust = challenge.protectionSpace.serverTrust else { return (.performDefaultHandling, nil) }
         guard CertificatePinning.evaluate(trust, pins: pins) else {

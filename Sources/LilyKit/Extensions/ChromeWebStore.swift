@@ -3,13 +3,13 @@ import Foundation
 /// Adding an extension straight from the Chrome Web Store: a store link or 32-letter ID becomes
 /// Google's public CRX download, fetched without cookies or cache, capped in size, and verified
 /// (`CRX3`) before it's unpacked, audited and pinned like any other extension.
-enum ChromeWebStore {
+public enum ChromeWebStore {
     /// The Chrome version reported to the update service, which answers "no update" for any
     /// extension whose `minimum_chrome_version` is newer (1Password needs 137+). Derived from the
     /// date so it never goes stale: Chrome 120 shipped on 5 Dec 2023 and a new major version
     /// follows every four weeks. Holiday gaps make this run a version or two ahead, which the
     /// service accepts; running behind is what hides extensions.
-    static func productVersion(on date: Date = Date()) -> String {
+    public static func productVersion(on date: Date = Date()) -> String {
         let chrome120 = Date(timeIntervalSince1970: 1_701_734_400) // 2023-12-05 UTC
         let releases = max(0, Int(date.timeIntervalSince(chrome120) / (28 * 86_400)))
         return "\(120 + releases).0"
@@ -20,7 +20,7 @@ enum ChromeWebStore {
 
     /// The extension ID in a store link (`chromewebstore.google.com/detail/<name>/<id>`, or the
     /// older `chrome.google.com/webstore/detail/…`) or a bare ID; nil for anything else.
-    static func extensionID(from input: String) -> String? {
+    public static func extensionID(from input: String) -> String? {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if isExtensionID(text.lowercased()) { return text.lowercased() }
         guard let url = URL(string: text), url.scheme?.lowercased() == "https",
@@ -30,12 +30,12 @@ enum ChromeWebStore {
         return parts.last { isExtensionID($0) }
     }
 
-    static func isExtensionID(_ text: String) -> Bool {
+    public static func isExtensionID(_ text: String) -> Bool {
         text.utf8.count == 32 && text.utf8.allSatisfy { (UInt8(ascii: "a")...UInt8(ascii: "p")).contains($0) }
     }
 
     /// The update service's on-demand download, which redirects to the CRX3 file.
-    static func downloadURL(for id: String) -> URL? {
+    public static func downloadURL(for id: String) -> URL? {
         guard isExtensionID(id) else { return nil }
         var components = URLComponents(string: "https://clients2.google.com/service/update2/crx")
         components?.percentEncodedQuery = "response=redirect&prodversion=\(productVersion())&acceptformat=crx3&x=id%3D\(id)%26installsource%3Dondemand%26uc"
@@ -44,7 +44,7 @@ enum ChromeWebStore {
 
     /// Downloads the extension's CRX3 (at most `ExtensionPackage.maxTotalBytes`). Off the main
     /// actor; the caller verifies it.
-    static func download(_ id: String, session: URLSession? = nil) async throws -> Data {
+    public static func download(_ id: String, session: URLSession? = nil) async throws -> Data {
         guard let url = downloadURL(for: id) else { throw ExtensionPackage.Invalid(reason: "That isn't a Chrome Web Store extension ID.") }
         let session = session ?? URLSession(configuration: ephemeral)
         defer { session.finishTasksAndInvalidate() }

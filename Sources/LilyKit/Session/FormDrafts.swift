@@ -18,19 +18,19 @@ public final class FormDrafts {
         public var savedAt: Date
     }
 
-    nonisolated static let lifetime: TimeInterval = 24 * 60 * 60
-    nonisolated static let minCharacters = 20
-    nonisolated static let maxCharacters = 40_000
-    nonisolated static let maxFieldKey = 200
-    nonisolated static let maxDrafts = 200
+    public nonisolated static let lifetime: TimeInterval = 24 * 60 * 60
+    public nonisolated static let minCharacters = 20
+    public nonisolated static let maxCharacters = 40_000
+    public nonisolated static let maxFieldKey = 200
+    public nonisolated static let maxDrafts = 200
     /// One site can hold this many, so it can't push other sites' drafts out of the shared cap.
-    nonisolated static let maxDraftsPerOrigin = 20
+    public nonisolated static let maxDraftsPerOrigin = 20
 
     /// Most recent first.
     public private(set) var drafts: [Draft] = []
     private let file: SealedFile?
     private var saveTask: Task<Void, Never>?
-    var now: () -> Date = Date.init
+    public var now: () -> Date = Date.init
 
     /// `directory: nil` keeps drafts in memory only (tests, self-test).
     public init(directory: URL?, keys: KeyStore = KeychainKeyStore()) {
@@ -40,7 +40,7 @@ public final class FormDrafts {
     }
 
     /// The key drafts are stored under: scheme, host, port and path of an http(s) page.
-    nonisolated static func pageKey(_ url: URL) -> String? {
+    public nonisolated static func pageKey(_ url: URL) -> String? {
         guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http", let host = url.host?.lowercased() else { return nil }
         let port = url.port.map { ":\($0)" } ?? ""
         let path = url.path.isEmpty ? "/" : url.path
@@ -48,7 +48,7 @@ public final class FormDrafts {
     }
 
     /// "scheme://host:port" of a page key.
-    nonisolated static func origin(of pageKey: String) -> Substring {
+    public nonisolated static func origin(of pageKey: String) -> Substring {
         let afterScheme = pageKey.range(of: "://").map { pageKey[$0.upperBound...] } ?? Substring(pageKey)
         let hostEnd = afterScheme.firstIndex(of: "/") ?? afterScheme.endIndex
         return pageKey[pageKey.startIndex..<hostEnd]
@@ -67,7 +67,7 @@ public final class FormDrafts {
     }
 
     /// Text typed into `field` on `page`. Shorter than `minCharacters` counts as nothing typed.
-    func save(page url: URL, field: String, text: String) {
+    public func save(page url: URL, field: String, text: String) {
         guard let page = Self.pageKey(url), !field.isEmpty, field.count <= Self.maxFieldKey else { return }
         let text = String(text.prefix(Self.maxCharacters))
         drafts.removeAll { $0.page == page && $0.field == field }
@@ -88,7 +88,7 @@ public final class FormDrafts {
     /// Text that's a credential rather than writing: a PEM private key, one long unbroken token
     /// (API keys, JWTs, hex secrets; prose has spaces), or a 12–24 word recovery phrase. Kept out
     /// of drafts even when the page didn't mark the field, and an earlier draft of it is dropped.
-    nonisolated static func looksSecret(_ text: String) -> Bool {
+    public nonisolated static func looksSecret(_ text: String) -> Bool {
         if text.contains("-----BEGIN"), text.contains("PRIVATE KEY") { return true }
         let words = text.split(whereSeparator: \.isWhitespace)
         if words.count == 1 { return true }
@@ -98,7 +98,7 @@ public final class FormDrafts {
     }
 
     /// The field was sent or emptied.
-    func clear(page url: URL, field: String) {
+    public func clear(page url: URL, field: String) {
         guard let page = Self.pageKey(url) else { return }
         let before = drafts.count
         drafts.removeAll { $0.page == page && $0.field == field }
@@ -106,13 +106,13 @@ public final class FormDrafts {
     }
 
     /// Unexpired drafts for `url`'s page, most recent first.
-    func drafts(for url: URL) -> [Draft] {
+    public func drafts(for url: URL) -> [Draft] {
         if pruneExpired() { scheduleSave() }
         guard let page = Self.pageKey(url) else { return [] }
         return drafts.filter { $0.page == page }
     }
 
-    func clearPage(_ url: URL) {
+    public func clearPage(_ url: URL) {
         guard let page = Self.pageKey(url) else { return }
         drafts.removeAll { $0.page == page }
         scheduleSave()

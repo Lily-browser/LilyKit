@@ -9,8 +9,8 @@ import WebKit
 /// object, which have no public API. Each is used only after checking the method exists, so on a
 /// macOS without them those two items are simply unavailable; nothing crashes.
 @MainActor
-enum WebInspector {
-    static var isEnabled: Bool {
+public enum WebInspector {
+    public static var isEnabled: Bool {
         #if DEBUG
         true
         #else
@@ -19,23 +19,23 @@ enum WebInspector {
     }
 
     /// For a new web view's configuration (`WebViewFactory`).
-    static func configure(_ preferences: WKPreferences) {
+    public static func configure(_ preferences: WKPreferences) {
         setDeveloperExtras(isEnabled, in: preferences)
     }
 
     /// Applies the current setting to a web view that already exists.
-    static func apply(to webView: WKWebView) {
+    public static func apply(to webView: WKWebView) {
         webView.isInspectable = isEnabled
         setDeveloperExtras(isEnabled, in: webView.configuration.preferences)
     }
 
     /// Opens the inspector for `webView`, if WebKit offers it.
-    static func show(for webView: WKWebView) {
+    public static func show(for webView: WKWebView) {
         guard isEnabled, let inspector = inspector(of: webView) else { return }
         _ = inspector.perform(NSSelectorFromString("show"))
     }
 
-    static func canShow(for webView: WKWebView?) -> Bool {
+    public static func canShow(for webView: WKWebView?) -> Bool {
         guard isEnabled, let webView else { return false }
         return inspector(of: webView) != nil
     }

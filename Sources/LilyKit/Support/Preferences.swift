@@ -91,7 +91,7 @@ public enum Preferences {
     public static let defaultHomepage = "https://www.youtube.com"
 
     /// Bool preferences that default to on when never set.
-    static func flag(_ key: String, default value: Bool) -> Bool {
+    public static func flag(_ key: String, default value: Bool) -> Bool {
         UserDefaults.standard.object(forKey: key) as? Bool ?? value
     }
 

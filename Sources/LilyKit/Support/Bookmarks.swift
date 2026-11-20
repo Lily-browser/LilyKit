@@ -18,7 +18,7 @@ public final class Bookmarks {
         public static func link(_ title: String, _ url: URL) -> Node { Node(title: title, url: url, children: nil) }
     }
 
-    static let maxLinks = 100_000
+    public static let maxLinks = 100_000
 
     public private(set) var root: [Node] = [] { didSet { index = nil; generation &+= 1 } }
     /// Bumped on every change; see `History.generation`.

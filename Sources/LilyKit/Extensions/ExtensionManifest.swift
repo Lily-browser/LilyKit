@@ -3,49 +3,49 @@ import Foundation
 /// An extension's manifest.json (Manifest V2 and V3), decoded leniently: a field with an
 /// unexpected shape is treated as absent rather than failing the whole manifest, the way browsers
 /// tolerate store packages. Only `name` and `version` are required.
-struct ExtensionManifest: Codable, Sendable, Equatable {
-    struct ContentScript: Codable, Sendable, Equatable {
-        var matches: [String]
-        var excludeMatches: [String]?
-        var js: [String]?
-        var css: [String]?
-        var runAt: String?
-        var allFrames: Bool?
+public struct ExtensionManifest: Codable, Sendable, Equatable {
+    public struct ContentScript: Codable, Sendable, Equatable {
+        public var matches: [String]
+        public var excludeMatches: [String]?
+        public var js: [String]?
+        public var css: [String]?
+        public var runAt: String?
+        public var allFrames: Bool?
 
-        enum CodingKeys: String, CodingKey {
+        public enum CodingKeys: String, CodingKey {
             case matches, js, css
             case excludeMatches = "exclude_matches", runAt = "run_at", allFrames = "all_frames"
         }
     }
 
-    struct Background: Codable, Sendable, Equatable {
-        var serviceWorker: String?
-        var scripts: [String]?
-        var page: String?
+    public struct Background: Codable, Sendable, Equatable {
+        public var serviceWorker: String?
+        public var scripts: [String]?
+        public var page: String?
 
-        enum CodingKeys: String, CodingKey { case scripts, page, serviceWorker = "service_worker" }
+        public enum CodingKeys: String, CodingKey { case scripts, page, serviceWorker = "service_worker" }
     }
 
-    struct Action: Codable, Sendable, Equatable {
-        var defaultPopup: String?
-        var defaultTitle: String?
+    public struct Action: Codable, Sendable, Equatable {
+        public var defaultPopup: String?
+        public var defaultTitle: String?
 
-        enum CodingKeys: String, CodingKey { case defaultPopup = "default_popup", defaultTitle = "default_title" }
+        public enum CodingKeys: String, CodingKey { case defaultPopup = "default_popup", defaultTitle = "default_title" }
     }
 
     /// `content_security_policy`: a string in MV2, `{ extension_pages, sandbox }` in MV3.
-    struct SecurityPolicy: Codable, Sendable, Equatable {
-        var extensionPages: String?
-        var sandbox: String?
+    public struct SecurityPolicy: Codable, Sendable, Equatable {
+        public var extensionPages: String?
+        public var sandbox: String?
 
-        enum CodingKeys: String, CodingKey { case extensionPages = "extension_pages", sandbox }
+        public enum CodingKeys: String, CodingKey { case extensionPages = "extension_pages", sandbox }
 
-        init(extensionPages: String?, sandbox: String?) {
+        public init(extensionPages: String?, sandbox: String?) {
             self.extensionPages = extensionPages
             self.sandbox = sandbox
         }
 
-        init(from decoder: Decoder) throws {
+        public init(from decoder: Decoder) throws {
             if let legacy = try? decoder.singleValueContainer().decode(String.self) {
                 self.init(extensionPages: legacy, sandbox: nil)
                 return
@@ -56,28 +56,28 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
         }
     }
 
-    struct ExternallyConnectable: Codable, Sendable, Equatable {
-        var matches: [String]?
-        var ids: [String]?
+    public struct ExternallyConnectable: Codable, Sendable, Equatable {
+        public var matches: [String]?
+        public var ids: [String]?
     }
 
-    var manifestVersion: Int
-    var name: String
-    var version: String
-    var description: String?
-    var defaultLocale: String?
-    var permissions: [String]
-    var optionalPermissions: [String]
-    var hostPermissions: [String]
-    var contentScripts: [ContentScript]
-    var background: Background?
-    var action: Action?
-    var icons: [String: String]
-    var contentSecurityPolicy: SecurityPolicy?
-    var externallyConnectable: ExternallyConnectable?
-    var updateURL: String?
+    public var manifestVersion: Int
+    public var name: String
+    public var version: String
+    public var description: String?
+    public var defaultLocale: String?
+    public var permissions: [String]
+    public var optionalPermissions: [String]
+    public var hostPermissions: [String]
+    public var contentScripts: [ContentScript]
+    public var background: Background?
+    public var action: Action?
+    public var icons: [String: String]
+    public var contentSecurityPolicy: SecurityPolicy?
+    public var externallyConnectable: ExternallyConnectable?
+    public var updateURL: String?
 
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case name, version, description, permissions, background, action, icons
         case manifestVersion = "manifest_version", defaultLocale = "default_locale"
         case optionalPermissions = "optional_permissions", hostPermissions = "host_permissions"
@@ -86,7 +86,7 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
         case updateURL = "update_url"
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         func lenient<T: Decodable>(_ type: T.Type, _ key: CodingKeys) -> T? { (try? c.decodeIfPresent(type, forKey: key)) ?? nil }
         manifestVersion = lenient(Int.self, .manifestVersion) ?? 2
@@ -107,7 +107,7 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
         updateURL = lenient(String.self, .updateURL)
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(manifestVersion, forKey: .manifestVersion)
         try c.encode(name, forKey: .name)
@@ -128,12 +128,12 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
 
     /// A string array entry that may also be an object (some MV2 manifests); non-strings are dropped.
     private struct LenientString: Decodable {
-        let value: String?
-        init(from decoder: Decoder) throws { value = try? decoder.singleValueContainer().decode(String.self) }
+        public let value: String?
+        public init(from decoder: Decoder) throws { value = try? decoder.singleValueContainer().decode(String.self) }
     }
 
     /// Host patterns from both `host_permissions` (MV3) and `permissions` (MV2).
-    var allHostPatterns: [String] {
+    public var allHostPatterns: [String] {
         hostPermissions + permissions.filter { $0 == "<all_urls>" || $0.contains("://") }
     }
 
@@ -141,7 +141,7 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
 
     /// Parses the package's manifest (tolerating a UTF-8 BOM) and resolves `__MSG_key__` strings
     /// from its default locale's messages.json.
-    static func parse(_ package: ExtensionPackage) -> ExtensionManifest? {
+    public static func parse(_ package: ExtensionPackage) -> ExtensionManifest? {
         guard var data = package.manifest else { return nil }
         if data.starts(with: [0xEF, 0xBB, 0xBF]) { data.removeFirst(3) }
         guard var manifest = try? JSONDecoder().decode(ExtensionManifest.self, from: data) else { return nil }
@@ -152,7 +152,7 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
         return manifest
     }
 
-    static func localeMessages(_ package: ExtensionPackage, locale: String?) -> [String: String] {
+    public static func localeMessages(_ package: ExtensionPackage, locale: String?) -> [String: String] {
         let candidates = [Locale.current.identifier.replacingOccurrences(of: "-", with: "_"),
                           Locale.current.language.languageCode?.identifier, locale, "en"].compactMap { $0 }
         for candidate in candidates {
@@ -165,14 +165,14 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
         return [:]
     }
 
-    static func localized(_ text: String, _ messages: [String: String]) -> String {
+    public static func localized(_ text: String, _ messages: [String: String]) -> String {
         guard text.hasPrefix("__MSG_"), text.hasSuffix("__"), text.count > 8 else { return text }
         let key = String(text.dropFirst(6).dropLast(2)).lowercased()
         return messages[key] ?? text
     }
 
     /// The best icon file for `size` points, if the manifest declares any.
-    func iconPath(for size: Int) -> String? {
+    public func iconPath(for size: Int) -> String? {
         let sized = icons.compactMap { key, path in Int(key).map { ($0, path) } }.sorted { $0.0 < $1.0 }
         return (sized.first { $0.0 >= size } ?? sized.last)?.1
     }
@@ -180,12 +180,12 @@ struct ExtensionManifest: Codable, Sendable, Equatable {
 
 /// A WebExtension match pattern (`<all_urls>`, `*://*.example.com/path*`), for compatibility-mode
 /// content scripts.
-struct ExtensionMatchPattern: Sendable, Equatable {
-    let scheme: String
-    let host: String
-    let path: String
+public struct ExtensionMatchPattern: Sendable, Equatable {
+    public let scheme: String
+    public let host: String
+    public let path: String
 
-    init?(_ pattern: String) {
+    public init?(_ pattern: String) {
         if pattern == "<all_urls>" { scheme = "*"; host = "*"; path = "/*"; return }
         guard let separator = pattern.range(of: "://") else { return nil }
         let scheme = String(pattern[..<separator.lowerBound]).lowercased()
@@ -198,7 +198,7 @@ struct ExtensionMatchPattern: Sendable, Equatable {
         self.path = String(rest[slash...])
     }
 
-    func matches(_ url: URL) -> Bool {
+    public func matches(_ url: URL) -> Bool {
         guard let urlScheme = url.scheme?.lowercased() else { return false }
         if scheme == "*" { guard urlScheme == "http" || urlScheme == "https" else { return false } } else if scheme != urlScheme { return false }
         let urlHost = url.host?.lowercased() ?? ""
@@ -214,7 +214,7 @@ struct ExtensionMatchPattern: Sendable, Equatable {
     }
 
     /// `*` matches any run of characters; everything else is literal.
-    static func glob(_ pattern: String, _ text: String) -> Bool {
+    public static func glob(_ pattern: String, _ text: String) -> Bool {
         let parts = pattern.split(separator: "*", omittingEmptySubsequences: false).map(String.init)
         guard parts.count > 1 else { return pattern == text }
         guard text.hasPrefix(parts[0]) else { return false }
