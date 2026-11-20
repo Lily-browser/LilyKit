@@ -13,6 +13,12 @@ public struct InspectedExtension: Sendable {
     public let package: ExtensionPackage
     public let manifest: ExtensionManifest?
     public let audit: ExtensionAudit
+
+    public init(package: ExtensionPackage, manifest: ExtensionManifest?, audit: ExtensionAudit) {
+        self.package = package
+        self.manifest = manifest
+        self.audit = audit
+    }
 }
 
 public enum ExtensionLoader {

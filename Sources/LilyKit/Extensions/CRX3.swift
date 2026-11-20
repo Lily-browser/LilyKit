@@ -21,12 +21,23 @@ public enum CRX3 {
     public struct Proof: Equatable {
         public let publicKey: Data
         public let signature: Data
+
+        public init(publicKey: Data, signature: Data) {
+            self.publicKey = publicKey
+            self.signature = signature
+        }
     }
 
     public struct Header: Equatable {
         public var rsa: [Proof] = []
         public var ecdsa: [Proof] = []
         public var signedData: Data?
+
+        public init(rsa: [Proof] = [], ecdsa: [Proof] = [], signedData: Data? = nil) {
+            self.rsa = rsa
+            self.ecdsa = ecdsa
+            self.signedData = signedData
+        }
     }
 
     /// The zip inside `data`, once its signatures, ID and publisher are verified.

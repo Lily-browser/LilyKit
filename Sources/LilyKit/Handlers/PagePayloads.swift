@@ -15,16 +15,34 @@ public enum PagePayload {
         public var description: String?
         public var favicon: String?
         public var themeColor: String?
+
+        public init(url: String, title: String? = nil, description: String? = nil, favicon: String? = nil, themeColor: String? = nil) {
+            self.url = url
+            self.title = title
+            self.description = description
+            self.favicon = favicon
+            self.themeColor = themeColor
+        }
     }
 
     public struct Selection: Decodable {
         public var url: String
         public var text: String
         public var truncated: Bool?
+
+        public init(url: String, text: String, truncated: Bool? = nil) {
+            self.url = url
+            self.text = text
+            self.truncated = truncated
+        }
     }
 
     public struct SelectionCleared: Decodable {
         public var url: String
+
+        public init(url: String) {
+            self.url = url
+        }
     }
 
     /// Text typed into a long field (`form-recovery.js`).
@@ -32,12 +50,23 @@ public enum PagePayload {
         public var url: String
         public var field: String
         public var text: String
+
+        public init(url: String, field: String, text: String) {
+            self.url = url
+            self.field = field
+            self.text = text
+        }
     }
 
     /// Where a linked split pane is scrolled to, as fractions of how far it can scroll.
     public struct ScrollPosition: Decodable {
         public var x: Double
         public var y: Double
+
+        public init(x: Double, y: Double) {
+            self.x = x
+            self.y = y
+        }
 
         public var clamped: JSONValue {
             let fraction = { (v: Double) in v.isFinite ? min(1, max(0, v)) : 0 }
@@ -48,6 +77,11 @@ public enum PagePayload {
     public struct FormClear: Decodable {
         public var url: String
         public var field: String
+
+        public init(url: String, field: String) {
+            self.url = url
+            self.field = field
+        }
     }
 
     /// A request that carries nothing: `null` or `{}`, and nothing else.
@@ -70,6 +104,11 @@ public enum PagePayload {
     public struct VideoChanged: Decodable {
         public var videoId: String?
         public var url: String
+
+        public init(videoId: String? = nil, url: String) {
+            self.videoId = videoId
+            self.url = url
+        }
     }
 
     public struct RuntimeError: Decodable {
@@ -77,6 +116,13 @@ public enum PagePayload {
         public var source: String?
         public var line: Int?
         public var column: Int?
+
+        public init(message: String? = nil, source: String? = nil, line: Int? = nil, column: Int? = nil) {
+            self.message = message
+            self.source = source
+            self.line = line
+            self.column = column
+        }
     }
 
     /// Validated page metadata, safe to show and to store.
@@ -86,6 +132,14 @@ public enum PagePayload {
         public var favicon: URL?
         public var themeColor: String?
         public var description: String?
+
+        public init(url: URL, title: String? = nil, favicon: URL? = nil, themeColor: String? = nil, description: String? = nil) {
+            self.url = url
+            self.title = title
+            self.favicon = favicon
+            self.themeColor = themeColor
+            self.description = description
+        }
 
         public var json: JSONValue {
             ["url": .string(url.absoluteString), "title": JSONValue(title), "favicon": JSONValue(favicon?.absoluteString),

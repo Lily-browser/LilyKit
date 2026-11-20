@@ -6,6 +6,12 @@ public struct CompiledFilters: Sendable {
     public var chunks: [String]
     public var ruleCount: Int
     public var procedural: [String: [ProceduralFilter]]
+
+    public init(chunks: [String], ruleCount: Int, procedural: [String: [ProceduralFilter]]) {
+        self.chunks = chunks
+        self.ruleCount = ruleCount
+        self.procedural = procedural
+    }
 }
 
 /// Converts Adblock Plus / uBlock Origin / AdGuard filter lists into WebKit content-blocker rules.
@@ -50,6 +56,18 @@ public enum FilterListConverter {
         public var cosmeticExceptions: [String: Set<String>] = [:]
         public var genericHide: Set<String> = []
         public var specificHide: Set<String> = []
+
+        public init(blocks: [[String: Any]] = [], important: [[String: Any]] = [], exceptions: [[String: Any]] = [], generic: [(selector: String, except: [String])] = [], site: [String: [String]] = [:], procedural: [(domains: [String], filter: ProceduralFilter, raw: String)] = [], cosmeticExceptions: [String: Set<String>] = [:], genericHide: Set<String> = [], specificHide: Set<String> = []) {
+            self.blocks = blocks
+            self.important = important
+            self.exceptions = exceptions
+            self.generic = generic
+            self.site = site
+            self.procedural = procedural
+            self.cosmeticExceptions = cosmeticExceptions
+            self.genericHide = genericHide
+            self.specificHide = specificHide
+        }
         public var skipped = 0
 
         /// Element hiding (generic and per-site) batched into `css-display-none` rules.
@@ -180,6 +198,14 @@ public enum FilterListConverter {
         public var exception: Bool
         public var extended: Bool
         public var selector: String
+
+        public init(include: [String], exclude: [String], exception: Bool, extended: Bool, selector: String) {
+            self.include = include
+            self.exclude = exclude
+            self.exception = exception
+            self.extended = extended
+            self.selector = selector
+        }
     }
 
     /// Splits `domains##selector`, `domains#@#selector`, `domains#?#selector`; nil for network filters.

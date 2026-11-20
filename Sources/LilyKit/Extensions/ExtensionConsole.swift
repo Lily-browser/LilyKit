@@ -15,6 +15,12 @@ public enum ExtensionConsole {
         public let action: Action
         public let level: Level?
         public let text: String?
+
+        public init(action: Action, level: Level?, text: String?) {
+            self.action = action
+            self.level = level
+            self.text = text
+        }
     }
 
     /// Answers the shim: whether to forward (`enabled`), or logs one line (`log`).

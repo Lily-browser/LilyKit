@@ -10,6 +10,10 @@ import SQLite3
 public struct SQLiteReader {
     public struct Failure: LocalizedError {
         public let reason: String
+
+        public init(reason: String) {
+            self.reason = reason
+        }
         public var errorDescription: String? { reason }
     }
 

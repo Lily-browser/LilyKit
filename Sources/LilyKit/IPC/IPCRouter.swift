@@ -23,6 +23,12 @@ public struct IPCContext: Sendable {
     public let source: IPCSource
     public let messageID: String
     public let kind: IPCEnvelope.Kind
+
+    public init(source: IPCSource, messageID: String, kind: IPCEnvelope.Kind) {
+        self.source = source
+        self.messageID = messageID
+        self.kind = kind
+    }
 }
 
 /// Type-keyed dispatcher with per-route source permissions.

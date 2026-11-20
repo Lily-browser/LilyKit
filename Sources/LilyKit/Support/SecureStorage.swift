@@ -12,6 +12,11 @@ public protocol KeyStore: Sendable {
 public struct KeychainError: Error, Equatable, CustomStringConvertible {
     public let status: OSStatus
     public let operation: String
+
+    public init(status: OSStatus, operation: String) {
+        self.status = status
+        self.operation = operation
+    }
     public var description: String {
         "Keychain \(operation) failed: \(SecCopyErrorMessageString(status, nil) as String? ?? "OSStatus \(status)")"
     }

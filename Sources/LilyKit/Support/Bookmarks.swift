@@ -12,6 +12,12 @@ public final class Bookmarks {
         public var url: URL?
         public var children: [Node]?
 
+        public init(title: String, url: URL? = nil, children: [Node]? = nil) {
+            self.title = title
+            self.url = url
+            self.children = children
+        }
+
         public var isFolder: Bool { children != nil }
 
         public static func folder(_ title: String, _ children: [Node]) -> Node { Node(title: title, url: nil, children: children) }

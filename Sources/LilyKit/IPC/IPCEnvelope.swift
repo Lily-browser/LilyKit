@@ -51,6 +51,12 @@ public struct IPCReply: Codable, Sendable, Equatable {
     public var result: JSONValue?
     public var error: IPCError?
 
+    public init(ok: Bool, result: JSONValue? = nil, error: IPCError? = nil) {
+        self.ok = ok
+        self.result = result
+        self.error = error
+    }
+
     public static func success(_ result: JSONValue) -> IPCReply { IPCReply(ok: true, result: result, error: nil) }
     public static func failure(_ error: IPCError) -> IPCReply { IPCReply(ok: false, result: nil, error: error) }
 

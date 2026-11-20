@@ -14,9 +14,19 @@ public struct ExtensionAudit: Sendable, Equatable {
         public let title: String
         /// Where it was seen (files, hosts, permissions), shortened for display.
         public let detail: String
+
+        public init(severity: Severity, title: String, detail: String) {
+            self.severity = severity
+            self.title = title
+            self.detail = detail
+        }
     }
 
     public let findings: [Finding]
+
+    public init(findings: [Finding]) {
+        self.findings = findings
+    }
     public var isBlocked: Bool { findings.contains { $0.severity == .blocked } }
 
     /// Analytics and error-reporting services that extensions commonly phone home to.

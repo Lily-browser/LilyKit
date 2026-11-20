@@ -11,6 +11,14 @@ public final class ScriptRegistry {
         public let injectionTime: InjectionManifest.Script.InjectionTime
         public let mainFrameOnly: Bool
         public let matches: [String]
+
+        public init(id: String, source: String, injectionTime: InjectionManifest.Script.InjectionTime, mainFrameOnly: Bool, matches: [String]) {
+            self.id = id
+            self.source = source
+            self.injectionTime = injectionTime
+            self.mainFrameOnly = mainFrameOnly
+            self.matches = matches
+        }
     }
 
     public static let messageHandlerName = "lily"

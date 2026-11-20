@@ -92,6 +92,12 @@ public struct ImportedBookmark: Equatable, Sendable {
     public var url: URL
     /// Folder names from the top ("Bookmarks Bar", "Work").
     public var folders: [String]
+
+    public init(title: String, url: URL, folders: [String]) {
+        self.title = title
+        self.url = url
+        self.folders = folders
+    }
 }
 
 public struct ImportedVisit: Equatable, Sendable {
@@ -99,6 +105,13 @@ public struct ImportedVisit: Equatable, Sendable {
     public var title: String
     public var visitCount: Int
     public var lastVisit: Date
+
+    public init(url: URL, title: String, visitCount: Int, lastVisit: Date) {
+        self.url = url
+        self.title = title
+        self.visitCount = visitCount
+        self.lastVisit = lastVisit
+    }
 }
 
 public struct ImportedSpace: Equatable, Sendable {
@@ -106,10 +119,21 @@ public struct ImportedSpace: Equatable, Sendable {
         public var title: String
         public var url: URL
         public var pinned: Bool
+
+        public init(title: String, url: URL, pinned: Bool) {
+            self.title = title
+            self.url = url
+            self.pinned = pinned
+        }
     }
 
     public var name: String
     public var tabs: [Tab]
+
+    public init(name: String, tabs: [Tab]) {
+        self.name = name
+        self.tabs = tabs
+    }
 }
 
 /// Everything read from one browser.
@@ -117,6 +141,12 @@ public struct BrowserData: Equatable, Sendable {
     public var bookmarks: [ImportedBookmark] = []
     public var history: [ImportedVisit] = []
     public var spaces: [ImportedSpace] = []
+
+    public init(bookmarks: [ImportedBookmark] = [], history: [ImportedVisit] = [], spaces: [ImportedSpace] = []) {
+        self.bookmarks = bookmarks
+        self.history = history
+        self.spaces = spaces
+    }
 }
 
 /// What a scan found, before importing.
@@ -124,6 +154,12 @@ public struct BrowserScan: Equatable, Sendable {
     public var bookmarks: Int
     public var history: Int
     public var spaces: Int
+
+    public init(bookmarks: Int, history: Int, spaces: Int) {
+        self.bookmarks = bookmarks
+        self.history = history
+        self.spaces = spaces
+    }
 }
 
 /// Address handling for imports and de-duplication.

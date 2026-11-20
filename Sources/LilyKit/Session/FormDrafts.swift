@@ -16,6 +16,13 @@ public final class FormDrafts {
         public var field: String
         public var text: String
         public var savedAt: Date
+
+        public init(page: String, field: String, text: String, savedAt: Date) {
+            self.page = page
+            self.field = field
+            self.text = text
+            self.savedAt = savedAt
+        }
     }
 
     public nonisolated static let lifetime: TimeInterval = 24 * 60 * 60

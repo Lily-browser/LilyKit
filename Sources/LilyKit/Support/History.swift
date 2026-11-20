@@ -11,6 +11,13 @@ public final class History {
         public var url: URL
         public var title: String
         public var visitedAt: Date
+
+        public init(id: UUID, url: URL, title: String, visitedAt: Date) {
+            self.id = id
+            self.url = url
+            self.title = title
+            self.visitedAt = visitedAt
+        }
     }
 
     public static let defaultRetentionDays = 90

@@ -6,6 +6,13 @@ public struct FilterList: Identifiable, Sendable, Hashable {
     public let name: String
     public let summary: String
     public let sources: [URL]
+
+    public init(id: String, name: String, summary: String, sources: [URL]) {
+        self.id = id
+        self.name = name
+        self.summary = summary
+        self.sources = sources
+    }
 }
 
 /// The lists offered in Settings → Privacy. All are fetched over HTTPS from their maintainers and

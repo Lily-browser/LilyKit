@@ -19,6 +19,12 @@ public enum AddressCompletion {
         public let text: String
         public let url: URL
 
+        public init(typed: String, text: String, url: URL) {
+            self.typed = typed
+            self.text = text
+            self.url = url
+        }
+
         /// The completed part, in UTF-16 units from the end of `typed` (for NSTextView's selection).
         public var selectedRange: NSRange {
             let start = (typed as NSString).length
@@ -37,6 +43,15 @@ public enum AddressCompletion {
         public let qualifies: Bool
         /// The page's title, or the site's root page title (empty when unknown).
         public let title: String
+
+        public init(display: String, key: String, url: URL, score: Double, qualifies: Bool, title: String) {
+            self.display = display
+            self.key = key
+            self.url = url
+            self.score = score
+            self.qualifies = qualifies
+            self.title = title
+        }
     }
 
     /// Built once per command bar (off the main actor) from history, bookmarks and open tabs.
@@ -48,6 +63,12 @@ public enum AddressCompletion {
         /// Frecency per exact page address, for ranking history suggestions.
         public var pageScores: [URL: Double] = [:]
 
+        public init(sites: [Candidate] = [], pages: [Candidate] = [], pageScores: [URL: Double] = [:]) {
+            self.sites = sites
+            self.pages = pages
+            self.pageScores = pageScores
+        }
+
         public static let empty = Index()
     }
 
@@ -55,6 +76,12 @@ public enum AddressCompletion {
         public let url: URL
         public let title: String
         public let date: Date
+
+        public init(url: URL, title: String, date: Date) {
+            self.url = url
+            self.title = title
+            self.date = date
+        }
     }
 
     public static let bookmarkBonus = 100.0

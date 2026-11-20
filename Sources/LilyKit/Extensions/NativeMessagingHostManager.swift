@@ -14,6 +14,10 @@ public actor NativeMessagingHostManager {
 
     public struct Unsupported: LocalizedError, Equatable {
         public let application: String
+
+        public init(application: String) {
+            self.application = application
+        }
         public var errorDescription: String? {
             "Lily doesn't connect extensions to desktop apps (\(application)). Sign in within the extension instead."
         }

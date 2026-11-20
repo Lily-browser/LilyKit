@@ -8,6 +8,12 @@ public final class AssistantContextStore {
         public var url: String
         public var title: String
         public var tabID: UUID?
+
+        public init(url: String, title: String, tabID: UUID? = nil) {
+            self.url = url
+            self.title = title
+            self.tabID = tabID
+        }
     }
 
     public struct TabContext {
@@ -15,6 +21,12 @@ public final class AssistantContextStore {
         public var page: Visit?
         public var selection: String?
         public var videoID: String?
+
+        public init(page: Visit? = nil, selection: String? = nil, videoID: String? = nil) {
+            self.page = page
+            self.selection = selection
+            self.videoID = videoID
+        }
     }
 
     public static let maxHistory = 100

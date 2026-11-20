@@ -40,6 +40,15 @@ public final class SiteSettings {
         /// true: ads and trackers are allowed on this site.
         public var adsAllowed: Bool?
 
+        public init(zoom: Double? = nil, darkMode: DarkMode? = nil, javaScript: Bool? = nil, camera: Permission? = nil, microphone: Permission? = nil, adsAllowed: Bool? = nil) {
+            self.zoom = zoom
+            self.darkMode = darkMode
+            self.javaScript = javaScript
+            self.camera = camera
+            self.microphone = microphone
+            self.adsAllowed = adsAllowed
+        }
+
         public var isEmpty: Bool { self == Site() }
     }
 

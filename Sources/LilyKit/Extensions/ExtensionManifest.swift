@@ -12,6 +12,15 @@ public struct ExtensionManifest: Codable, Sendable, Equatable {
         public var runAt: String?
         public var allFrames: Bool?
 
+        public init(matches: [String], excludeMatches: [String]? = nil, js: [String]? = nil, css: [String]? = nil, runAt: String? = nil, allFrames: Bool? = nil) {
+            self.matches = matches
+            self.excludeMatches = excludeMatches
+            self.js = js
+            self.css = css
+            self.runAt = runAt
+            self.allFrames = allFrames
+        }
+
         public enum CodingKeys: String, CodingKey {
             case matches, js, css
             case excludeMatches = "exclude_matches", runAt = "run_at", allFrames = "all_frames"
@@ -23,12 +32,23 @@ public struct ExtensionManifest: Codable, Sendable, Equatable {
         public var scripts: [String]?
         public var page: String?
 
+        public init(serviceWorker: String? = nil, scripts: [String]? = nil, page: String? = nil) {
+            self.serviceWorker = serviceWorker
+            self.scripts = scripts
+            self.page = page
+        }
+
         public enum CodingKeys: String, CodingKey { case scripts, page, serviceWorker = "service_worker" }
     }
 
     public struct Action: Codable, Sendable, Equatable {
         public var defaultPopup: String?
         public var defaultTitle: String?
+
+        public init(defaultPopup: String? = nil, defaultTitle: String? = nil) {
+            self.defaultPopup = defaultPopup
+            self.defaultTitle = defaultTitle
+        }
 
         public enum CodingKeys: String, CodingKey { case defaultPopup = "default_popup", defaultTitle = "default_title" }
     }
@@ -59,6 +79,11 @@ public struct ExtensionManifest: Codable, Sendable, Equatable {
     public struct ExternallyConnectable: Codable, Sendable, Equatable {
         public var matches: [String]?
         public var ids: [String]?
+
+        public init(matches: [String]? = nil, ids: [String]? = nil) {
+            self.matches = matches
+            self.ids = ids
+        }
     }
 
     public var manifestVersion: Int

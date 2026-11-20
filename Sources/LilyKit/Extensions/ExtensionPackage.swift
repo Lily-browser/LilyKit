@@ -14,6 +14,10 @@ public struct ExtensionPackage: Sendable, Equatable {
 
     public struct Invalid: LocalizedError, Equatable {
         public let reason: String
+
+        public init(reason: String) {
+            self.reason = reason
+        }
         public var errorDescription: String? { reason }
     }
 

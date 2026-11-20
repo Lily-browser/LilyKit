@@ -9,6 +9,11 @@ public struct ProceduralFilter: Codable, Sendable, Hashable {
         /// (a number of levels or a selector for closest()).
         public let type: String
         public let arg: String
+
+        public init(type: String, arg: String) {
+            self.type = type
+            self.arg = arg
+        }
     }
 
     public let selector: String
