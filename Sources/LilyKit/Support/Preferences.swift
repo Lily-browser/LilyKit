@@ -145,5 +145,5 @@ public enum AppInfo {
     /// which scripts the app injects or which executables it runs.
     public static var isPackaged: Bool { Bundle.main.bundleURL.pathExtension == "app" }
 
-    public static let helpURL = URL(string: "https://github.com/pwngoblin/Lily#readme")!
+    public static let helpURL = URL(string: "https://github.com/Lily-browser/Lily-macos#readme")!
 }

@@ -26,6 +26,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Security lint
+        run: bash scripts/security-lint.sh
+
       - name: Test (macOS)
         run: swift test
 
