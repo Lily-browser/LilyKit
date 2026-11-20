@@ -85,6 +85,12 @@ public struct MigrationOptions: Equatable, Sendable {
     public var bookmarks = true
     public var history = true
     public var spaces = true
+
+    public init(bookmarks: Bool = true, history: Bool = true, spaces: Bool = true) {
+        self.bookmarks = bookmarks
+        self.history = history
+        self.spaces = spaces
+    }
 }
 
 public struct ImportedBookmark: Equatable, Sendable {
