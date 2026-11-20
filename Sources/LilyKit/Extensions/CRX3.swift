@@ -8,29 +8,40 @@ import Security
 /// keys must hash to the extension ID that was asked for, and another must be Google's Web Store
 /// publisher key. So a download that was swapped, damaged, is a different extension or didn't come
 /// through the store never reaches the audit.
-enum CRX3 {
-    static let maxHeaderBytes = 1_000_000
-    static let maxProofs = 16
+public enum CRX3 {
+    public static let maxHeaderBytes = 1_000_000
+    public static let maxProofs = 16
     /// SHA-256 of the Chrome Web Store's publisher key (Chromium's `kPublisherKeyHash` in
     /// components/crx_file/crx_verifier.cc). The store signs every package it serves with it.
-    static let webStorePublisherKeyHash = Data([
+    public static let webStorePublisherKeyHash = Data([
         0x61, 0xf7, 0xf2, 0xa6, 0xbf, 0xcf, 0x74, 0xcd, 0x0b, 0xc1, 0xfe, 0x24, 0x97, 0xcc, 0x9b, 0x04,
         0x25, 0x4c, 0x65, 0x8f, 0x79, 0xf2, 0x14, 0x53, 0x92, 0x86, 0x7e, 0xa8, 0x36, 0x63, 0x67, 0xcf,
     ])
 
-    struct Proof: Equatable {
-        let publicKey: Data
-        let signature: Data
+    public struct Proof: Equatable {
+        public let publicKey: Data
+        public let signature: Data
+
+        public init(publicKey: Data, signature: Data) {
+            self.publicKey = publicKey
+            self.signature = signature
+        }
     }
 
-    struct Header: Equatable {
-        var rsa: [Proof] = []
-        var ecdsa: [Proof] = []
-        var signedData: Data?
+    public struct Header: Equatable {
+        public var rsa: [Proof] = []
+        public var ecdsa: [Proof] = []
+        public var signedData: Data?
+
+        public init(rsa: [Proof] = [], ecdsa: [Proof] = [], signedData: Data? = nil) {
+            self.rsa = rsa
+            self.ecdsa = ecdsa
+            self.signedData = signedData
+        }
     }
 
     /// The zip inside `data`, once its signatures, ID and publisher are verified.
-    static func verifiedPayload(_ data: Data, expectedID: String, publisherKeyHash: Data = webStorePublisherKeyHash) throws -> Data {
+    public static func verifiedPayload(_ data: Data, expectedID: String, publisherKeyHash: Data = webStorePublisherKeyHash) throws -> Data {
         let crx = data.startIndex == 0 ? data : Data(data) // zero-based indices
         let bad = ExtensionPackage.Invalid(reason: "The download isn't a valid Chrome extension package.")
         guard crx.count >= 12, crx.prefix(4) == Data("Cr24".utf8) else { throw bad }
@@ -67,13 +78,13 @@ enum CRX3 {
     }
 
     /// Chrome's ID encoding: the first 16 bytes of a SHA-256, one letter a–p per nibble.
-    static func extensionID(fromHash hash: Data) -> String {
+    public static func extensionID(fromHash hash: Data) -> String {
         String(String.UnicodeScalarView(hash.prefix(16).flatMap { [$0 >> 4, $0 & 0x0F] }.map { Unicode.Scalar(UInt8(ascii: "a") + $0) }))
     }
 
     // MARK: Protobuf
 
-    static func parseHeader(_ bytes: Data) throws -> Header {
+    public static func parseHeader(_ bytes: Data) throws -> Header {
         var header = Header()
         var reader = ProtoReader(bytes)
         while let (field, value) = try reader.next() {
@@ -107,15 +118,15 @@ enum CRX3 {
         return nil
     }
 
-    struct ProtoReader {
-        static let malformed = ExtensionPackage.Invalid(reason: "The package header is damaged.")
+    public struct ProtoReader {
+        public static let malformed = ExtensionPackage.Invalid(reason: "The package header is damaged.")
         private let data: Data
         private var offset = 0
 
-        init(_ data: Data) { self.data = Data(data) }
+        public init(_ data: Data) { self.data = Data(data) }
 
         /// The next field's number and, for length-delimited fields, its bytes; nil at the end.
-        mutating func next() throws -> (UInt64, Data?)? {
+        public mutating func next() throws -> (UInt64, Data?)? {
             guard offset < data.count else { return nil }
             let tag = try varint()
             switch tag & 0x7 {
@@ -167,7 +178,7 @@ enum CRX3 {
 
     /// The PKCS#1 `RSAPublicKey` inside a SubjectPublicKeyInfo, which is what Security wants.
     /// SEQUENCE { SEQUENCE { OID rsaEncryption, NULL }, BIT STRING { 0, RSAPublicKey } }
-    static func rsaPublicKey(fromSPKI spki: Data) -> Data? {
+    public static func rsaPublicKey(fromSPKI spki: Data) -> Data? {
         let rsaEncryption = Data([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01])
         let der = Data(spki)
         guard let outer = derElement(der, at: 0, tag: 0x30), outer.end == der.count,

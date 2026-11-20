@@ -11,12 +11,19 @@ public final class History {
         public var url: URL
         public var title: String
         public var visitedAt: Date
+
+        public init(id: UUID, url: URL, title: String, visitedAt: Date) {
+            self.id = id
+            self.url = url
+            self.title = title
+            self.visitedAt = visitedAt
+        }
     }
 
     public static let defaultRetentionDays = 90
-    static let maxEntries = 20_000
+    public static let maxEntries = 20_000
     /// Revisiting the same page within this window updates one entry instead of adding another.
-    static let coalesceInterval: TimeInterval = 30 * 60
+    public static let coalesceInterval: TimeInterval = 30 * 60
 
     /// Most recent first.
     public private(set) var visits: [Visit] = [] { didSet { searchText = nil; generation &+= 1 } }
@@ -30,7 +37,7 @@ public final class History {
 
     @ObservationIgnored private let file: SealedFile?
     @ObservationIgnored private var saveTask: Task<Void, Never>?
-    @ObservationIgnored var now: () -> Date = Date.init
+    @ObservationIgnored public var now: () -> Date = Date.init
 
     /// `directory: nil` keeps history in memory only (tests).
     public init(directory: URL?, keys: KeyStore = KeychainKeyStore()) {

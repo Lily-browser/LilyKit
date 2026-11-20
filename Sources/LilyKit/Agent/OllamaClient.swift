@@ -7,7 +7,7 @@ public struct OllamaClient: Sendable {
     public let keepAlive: String
     public let streamTimeout: TimeInterval
     /// A runaway or hostile model stream can't grow memory without bound.
-    static let maxReplyBytes = 1_000_000
+    public static let maxReplyBytes = 1_000_000
     private let session: URLSession
 
     public init(baseURL: URL, keepAlive: String = "10m", streamTimeout: TimeInterval = 300, session: URLSession = .shared) {

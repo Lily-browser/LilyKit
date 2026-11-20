@@ -2,10 +2,16 @@ import Foundation
 
 /// Filter lists compiled for WebKit: content-rule lists (JSON) plus the procedural cosmetic
 /// filters that run in the page, keyed by domain.
-struct CompiledFilters: Sendable {
-    var chunks: [String]
-    var ruleCount: Int
-    var procedural: [String: [ProceduralFilter]]
+public struct CompiledFilters: Sendable {
+    public var chunks: [String]
+    public var ruleCount: Int
+    public var procedural: [String: [ProceduralFilter]]
+
+    public init(chunks: [String], ruleCount: Int, procedural: [String: [ProceduralFilter]]) {
+        self.chunks = chunks
+        self.ruleCount = ruleCount
+        self.procedural = procedural
+    }
 }
 
 /// Converts Adblock Plus / uBlock Origin / AdGuard filter lists into WebKit content-blocker rules.
@@ -22,16 +28,16 @@ struct CompiledFilters: Sendable {
 /// Skipped rather than approximated: scriptlets (`+js`, they would run list-supplied JavaScript in
 /// pages), CSS injection (`:style`, `#$#`), HTML filtering (`##^`), redirects, `$csp`,
 /// `$removeparam`, and anything else WebKit can't express exactly.
-enum FilterListConverter {
+public enum FilterListConverter {
     /// WebKit accepts up to 150,000 rules per list; smaller lists compile faster and in less memory.
-    static let chunkSize = 50_000
-    static let maxChunks = 8
-    static let maxProceduralPerDomain = 64
+    public static let chunkSize = 50_000
+    public static let maxChunks = 8
+    public static let maxProceduralPerDomain = 64
     private static let separator = "[/:?=&]"
     private static let hostPrefix = "^[^:]+://+([^:/]+\\.)?"
     /// Everything a page loads except the page itself, so a typeless exception unblocks resources
     /// without also switching off element hiding on pages at that address.
-    static let subresourceTypes = ["image", "style-sheet", "script", "font", "raw", "svg-document", "media", "ping", "fetch", "websocket"]
+    public static let subresourceTypes = ["image", "style-sheet", "script", "font", "raw", "svg-document", "media", "ping", "fetch", "websocket"]
     private static let resourceTypes: [String: String] = [
         "script": "script", "image": "image", "stylesheet": "style-sheet", "css": "style-sheet", "font": "font",
         "media": "media", "xmlhttprequest": "fetch", "xhr": "fetch", "websocket": "websocket", "ping": "ping",
@@ -39,21 +45,33 @@ enum FilterListConverter {
     ]
 
     /// Rules gathered from a list before they are split into WebKit lists.
-    struct Parsed {
-        var blocks: [[String: Any]] = []
-        var important: [[String: Any]] = []
-        var exceptions: [[String: Any]] = []
-        var generic: [(selector: String, except: [String])] = []
-        var site: [String: [String]] = [:]
-        var procedural: [(domains: [String], filter: ProceduralFilter, raw: String)] = []
+    public struct Parsed {
+        public var blocks: [[String: Any]] = []
+        public var important: [[String: Any]] = []
+        public var exceptions: [[String: Any]] = []
+        public var generic: [(selector: String, except: [String])] = []
+        public var site: [String: [String]] = [:]
+        public var procedural: [(domains: [String], filter: ProceduralFilter, raw: String)] = []
         /// Selector → domains where `#@#` turns it off ("" means everywhere).
-        var cosmeticExceptions: [String: Set<String>] = [:]
-        var genericHide: Set<String> = []
-        var specificHide: Set<String> = []
-        var skipped = 0
+        public var cosmeticExceptions: [String: Set<String>] = [:]
+        public var genericHide: Set<String> = []
+        public var specificHide: Set<String> = []
+
+        public init(blocks: [[String: Any]] = [], important: [[String: Any]] = [], exceptions: [[String: Any]] = [], generic: [(selector: String, except: [String])] = [], site: [String: [String]] = [:], procedural: [(domains: [String], filter: ProceduralFilter, raw: String)] = [], cosmeticExceptions: [String: Set<String>] = [:], genericHide: Set<String> = [], specificHide: Set<String> = []) {
+            self.blocks = blocks
+            self.important = important
+            self.exceptions = exceptions
+            self.generic = generic
+            self.site = site
+            self.procedural = procedural
+            self.cosmeticExceptions = cosmeticExceptions
+            self.genericHide = genericHide
+            self.specificHide = specificHide
+        }
+        public var skipped = 0
 
         /// Element hiding (generic and per-site) batched into `css-display-none` rules.
-        func cosmeticRules() -> [[String: Any]] {
+        public func cosmeticRules() -> [[String: Any]] {
             var rules: [[String: Any]] = []
             // Grouped by the sites each selector is off on (besides the `$generichide` ones, which all share).
             var byExceptions: [[String]: [String]] = [:]
@@ -85,7 +103,7 @@ enum FilterListConverter {
         }
 
         /// Procedural filters by domain, minus `#@#` exceptions and `$elemhide` sites.
-        func proceduralByDomain() -> [String: [ProceduralFilter]] {
+        public func proceduralByDomain() -> [String: [ProceduralFilter]] {
             var result: [String: [ProceduralFilter]] = [:]
             for (domains, filter, raw) in procedural {
                 for domain in domains where !FilterListConverter.covers(specificHide, domain)
@@ -101,7 +119,7 @@ enum FilterListConverter {
 
     // MARK: Whole lists
 
-    static func compile(_ text: String, chunkSize: Int = chunkSize) throws -> CompiledFilters {
+    public static func compile(_ text: String, chunkSize: Int = chunkSize) throws -> CompiledFilters {
         let parsed = parse(text)
         let (lists, count) = splitCounting(parsed, chunkSize: chunkSize)
         let chunks = try lists.map { String(decoding: try JSONSerialization.data(withJSONObject: $0), as: UTF8.self) }
@@ -109,13 +127,13 @@ enum FilterListConverter {
     }
 
     /// One WebKit list's worth of rules (tests and small lists).
-    static func convert(_ text: String) -> [[String: Any]] {
+    public static func convert(_ text: String) -> [[String: Any]] {
         split(parse(text), chunkSize: 150_000).first ?? []
     }
 
     /// `ignore-previous-rules` only overrides earlier rules in the same list, so every chunk ends
     /// with all the exceptions, then the `$important` blocks that exceptions mustn't undo.
-    static func split(_ parsed: Parsed, chunkSize: Int) -> [[[String: Any]]] {
+    public static func split(_ parsed: Parsed, chunkSize: Int) -> [[[String: Any]]] {
         splitCounting(parsed, chunkSize: chunkSize).lists
     }
 
@@ -131,7 +149,7 @@ enum FilterListConverter {
         return (lists, lists.reduce(0) { $0 + $1.count - tail.count } + tail.count)
     }
 
-    static func parse(_ text: String) -> Parsed {
+    public static func parse(_ text: String) -> Parsed {
         var parsed = Parsed()
         let lines = text.split(whereSeparator: \.isNewline)
         // `$badfilter` cancels the identical filter wherever it appears in the lists.
@@ -174,17 +192,25 @@ enum FilterListConverter {
 
     // MARK: Element hiding
 
-    struct CosmeticParts {
-        var include: [String]
-        var exclude: [String]
-        var exception: Bool
-        var extended: Bool
-        var selector: String
+    public struct CosmeticParts {
+        public var include: [String]
+        public var exclude: [String]
+        public var exception: Bool
+        public var extended: Bool
+        public var selector: String
+
+        public init(include: [String], exclude: [String], exception: Bool, extended: Bool, selector: String) {
+            self.include = include
+            self.exclude = exclude
+            self.exception = exception
+            self.extended = extended
+            self.selector = selector
+        }
     }
 
     /// Splits `domains##selector`, `domains#@#selector`, `domains#?#selector`; nil for network filters.
     /// Other separators (`#$#` CSS injection, `#%#` scripts, `##+js`) come back as unsupported cosmetics.
-    static func cosmeticParts(_ line: String) -> CosmeticParts? {
+    public static func cosmeticParts(_ line: String) -> CosmeticParts? {
         guard let hash = line.firstIndex(of: "#") else { return nil }
         let domains = line[..<hash]
         guard domains.allSatisfy({ $0.isLetter || $0.isNumber || ".,~*-_".contains($0) }) else { return nil }
@@ -235,7 +261,7 @@ enum FilterListConverter {
 
     // MARK: Network filters
 
-    enum Network {
+    public enum Network {
         case rules([[String: Any]], important: Bool)
         /// An exception that switches off filtering features on whole sites (`$document`, `$elemhide`, …).
         case scope(Set<String>, domains: [String])
@@ -243,12 +269,12 @@ enum FilterListConverter {
     }
 
     /// The rules for one network filter (without its `@@`), or an empty array when unsupported.
-    static func networkRules(_ filter: String, exception: Bool) -> [[String: Any]] {
+    public static func networkRules(_ filter: String, exception: Bool) -> [[String: Any]] {
         if case .rules(let rules, _) = network(filter, exception: exception) { return rules }
         return []
     }
 
-    static func network(_ filter: String, exception: Bool) -> Network {
+    public static func network(_ filter: String, exception: Bool) -> Network {
         let (pattern, options) = splitOptions(filter)
         guard pattern.allSatisfy(\.isASCII) else { return .unsupported }
 
@@ -327,7 +353,7 @@ enum FilterListConverter {
     }
 
     /// Pattern and options, split at the `$` that starts the options (not one inside a regex).
-    static func splitOptions(_ filter: String) -> (String, [String]) {
+    public static func splitOptions(_ filter: String) -> (String, [String]) {
         if filter.hasPrefix("/"), let close = filter.range(of: "/$", options: .backwards), close.lowerBound > filter.startIndex {
             return (String(filter[..<filter.index(after: close.lowerBound)]), String(filter[close.upperBound...]).split(separator: ",").map(String.init))
         }
@@ -337,7 +363,7 @@ enum FilterListConverter {
     }
 
     /// WebKit `url-filter` for an ABP pattern; nil when WebKit's regex subset can't express it.
-    static func urlFilter(for pattern: String) -> String? {
+    public static func urlFilter(for pattern: String) -> String? {
         if pattern.isEmpty || pattern == "*" { return ".*" }
         if pattern.hasPrefix("/"), pattern.hasSuffix("/"), pattern.count > 2 {
             return regexFilter(String(pattern.dropFirst().dropLast()))
@@ -369,7 +395,7 @@ enum FilterListConverter {
 
     /// ABP wildcard pattern → WebKit's regex subset. `^` (separator) becomes a character class;
     /// its "end of address" meaning is dropped because WebKit has no `|` alternation.
-    static func regex(for pattern: String) -> String {
+    public static func regex(for pattern: String) -> String {
         var out = ""
         for char in pattern {
             switch char {
@@ -385,7 +411,7 @@ enum FilterListConverter {
     /// A list's `/regex/` translated to WebKit's subset (no alternation, counted repetition, lazy
     /// quantifiers, lookarounds or backreferences; `\d` and `\w` spelled out), or nil. WebKit
     /// refuses a whole list over one unsupported regex, so anything doubtful is skipped.
-    static func regexFilter(_ source: String) -> String? {
+    public static func regexFilter(_ source: String) -> String? {
         guard source.allSatisfy(\.isASCII), !source.contains("|"), !source.contains("(?"), !source.contains("{"),
               !source.contains("*?"), !source.contains("+?"), !source.contains("??") else { return nil }
         var out = ""
@@ -444,7 +470,7 @@ enum FilterListConverter {
     // MARK: Helpers
 
     /// `0.0.0.0 ads.example` / `127.0.0.1 ads.example` → the host.
-    static func hostsEntry(_ line: String) -> String? {
+    public static func hostsEntry(_ line: String) -> String? {
         guard line.hasPrefix("0.0.0.0") || line.hasPrefix("127.0.0.1") else { return nil }
         let fields = line.split(whereSeparator: { $0 == " " || $0 == "\t" })
         guard fields.count >= 2 else { return nil }
@@ -456,28 +482,28 @@ enum FilterListConverter {
     /// Entities (`google.*`) and wildcards can't be WebKit domains. Included ones are dropped while
     /// plain domains remain (the filter then covers fewer sites, never more); nil when every include
     /// is one, or an exclusion is (dropping it would widen the filter).
-    static func plainDomains(_ include: [String], _ exclude: [String]) -> (include: [String], exclude: [String])? {
+    public static func plainDomains(_ include: [String], _ exclude: [String]) -> (include: [String], exclude: [String])? {
         guard exclude.allSatisfy(isPlainDomain) else { return nil }
         let plain = include.filter(isPlainDomain)
         if plain.isEmpty && !include.isEmpty { return nil }
         return (plain, exclude)
     }
 
-    static func isPlainDomain(_ domain: String) -> Bool {
+    public static func isPlainDomain(_ domain: String) -> Bool {
         !domain.isEmpty && domain.count <= 253 && !domain.hasPrefix(".") && !domain.hasSuffix(".")
             && domain.allSatisfy { ($0.isASCII && ($0.isLetter || $0.isNumber)) || $0 == "." || $0 == "-" || $0 == "_" }
     }
 
     /// Include domains with exclusions dropped when they don't matter (an unrelated site); nil when
     /// an exclusion narrows an include (`a.com|~b.a.com`), which WebKit can't express.
-    static func narrowed(_ include: [String], excluding exclude: [String]) -> [String]? {
+    public static func narrowed(_ include: [String], excluding exclude: [String]) -> [String]? {
         if include.isEmpty { return [] }
         for excluded in exclude where include.contains(where: { excluded == $0 || excluded.hasSuffix("." + $0) }) { return nil }
         return include
     }
 
     /// `domain` is one of `domains` or a subdomain of one; "" covers everything.
-    static func covers(_ domains: Set<String>, _ domain: String) -> Bool {
+    public static func covers(_ domains: Set<String>, _ domain: String) -> Bool {
         if domains.isEmpty { return false }
         if domains.contains("") || domains.contains(domain) { return true }
         var rest = Substring(domain)
@@ -495,7 +521,7 @@ enum FilterListConverter {
         return pattern + "$" + options.map { $0.lowercased() }.filter { $0 != removed }.sorted().joined(separator: ",")
     }
 
-    static func isSupportedSelector(_ selector: String) -> Bool {
+    public static func isSupportedSelector(_ selector: String) -> Bool {
         if case .css = CosmeticSelector.parse(selector) { return CosmeticSelector.isValidCSS(selector) }
         return false
     }

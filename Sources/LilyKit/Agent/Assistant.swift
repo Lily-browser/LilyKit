@@ -70,7 +70,7 @@ public final class Assistant {
         return models
     }
 
-    func resolveModel(_ requested: String?) async throws -> String {
+    public func resolveModel(_ requested: String?) async throws -> String {
         let names = try await models().map(\.name)
         if let wanted = requested?.nilIfEmpty ?? configuration.defaultModel {
             if let match = names.first(where: { $0 == wanted || $0 == "\(wanted):latest" || $0.split(separator: ":").first.map(String.init) == wanted }) {

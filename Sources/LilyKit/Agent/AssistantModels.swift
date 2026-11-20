@@ -165,6 +165,15 @@ public struct OllamaModel: Codable, Sendable, Equatable {
     public var family: String?
     public var parameterSize: String?
     public var quantization: String?
+
+    public init(name: String, size: Int? = nil, modifiedAt: String? = nil, family: String? = nil, parameterSize: String? = nil, quantization: String? = nil) {
+        self.name = name
+        self.size = size
+        self.modifiedAt = modifiedAt
+        self.family = family
+        self.parameterSize = parameterSize
+        self.quantization = quantization
+    }
 }
 
 public struct ChatStats: Codable, Sendable, Equatable {
@@ -173,6 +182,14 @@ public struct ChatStats: Codable, Sendable, Equatable {
     public var promptTokens: Int?
     public var completionTokens: Int?
     public var doneReason: String?
+
+    public init(model: String? = nil, totalDurationMs: Int? = nil, promptTokens: Int? = nil, completionTokens: Int? = nil, doneReason: String? = nil) {
+        self.model = model
+        self.totalDurationMs = totalDurationMs
+        self.promptTokens = promptTokens
+        self.completionTokens = completionTokens
+        self.doneReason = doneReason
+    }
 }
 
 /// Progress of one request. `json` is the event the sidebar UI consumes.
@@ -215,8 +232,8 @@ public enum AssistantEvent: Sendable, Equatable {
 }
 
 public extension IPCError {
-    static func ollamaUnavailable(_ message: String) -> IPCError { IPCError("ollama_unavailable", message) }
-    static func ollamaError(_ message: String) -> IPCError { IPCError("ollama_error", message) }
-    static func noModel(_ message: String) -> IPCError { IPCError("no_model", message) }
-    static let cancelled = IPCError("cancelled", "Request cancelled")
+    public static func ollamaUnavailable(_ message: String) -> IPCError { IPCError("ollama_unavailable", message) }
+    public static func ollamaError(_ message: String) -> IPCError { IPCError("ollama_error", message) }
+    public static func noModel(_ message: String) -> IPCError { IPCError("no_model", message) }
+    public static let cancelled = IPCError("cancelled", "Request cancelled")
 }

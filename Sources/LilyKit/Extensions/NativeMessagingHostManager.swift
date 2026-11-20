@@ -9,12 +9,18 @@ import Foundation
 /// answered at once with a clear error the extension can handle, so password managers fall back
 /// to their own in-extension sign-in, storage and web flows instead of hanging on a host that
 /// never answers. No process is ever started here.
-actor NativeMessagingHostManager {
-    static let shared = NativeMessagingHostManager()
+public actor NativeMessagingHostManager {
+    public init() {}
 
-    struct Unsupported: LocalizedError, Equatable {
-        let application: String
-        var errorDescription: String? {
+    public static let shared = NativeMessagingHostManager()
+
+    public struct Unsupported: LocalizedError, Equatable {
+        public let application: String
+
+        public init(application: String) {
+            self.application = application
+        }
+        public var errorDescription: String? {
             "Lily doesn't connect extensions to desktop apps (\(application)). Sign in within the extension instead."
         }
     }
@@ -22,7 +28,7 @@ actor NativeMessagingHostManager {
     private var reported = Set<String>()
 
     /// The answer to a one-off native message or a port connection: always `Unsupported`.
-    func request(application: String?, extensionName: String) -> Unsupported {
+    public func request(application: String?, extensionName: String) -> Unsupported {
         let name = String((application ?? "native host").prefix(100))
         if reported.insert("\(extensionName)|\(name)").inserted {
             Log.extensions.notice("Native messaging to \(name, privacy: .public) refused for \(extensionName, privacy: .private): not supported")

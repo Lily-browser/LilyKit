@@ -27,7 +27,7 @@ public final class ScriptMessageBridge: NSObject, WKScriptMessageHandlerWithRepl
     }
 
     /// Web pages and local files the user opened; never `webkit-extension:` and similar.
-    nonisolated static func acceptsMessages(fromScheme scheme: String) -> Bool {
+    public nonisolated static func acceptsMessages(fromScheme scheme: String) -> Bool {
         ["https", "http", "file"].contains(scheme.lowercased())
     }
 

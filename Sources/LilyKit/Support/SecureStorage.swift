@@ -12,6 +12,11 @@ public protocol KeyStore: Sendable {
 public struct KeychainError: Error, Equatable, CustomStringConvertible {
     public let status: OSStatus
     public let operation: String
+
+    public init(status: OSStatus, operation: String) {
+        self.status = status
+        self.operation = operation
+    }
     public var description: String {
         "Keychain \(operation) failed: \(SecCopyErrorMessageString(status, nil) as String? ?? "OSStatus \(status)")"
     }
@@ -47,7 +52,7 @@ public actor KeychainKeyStore: KeyStore {
     /// Login keychain ACL that trusts only this app; any other process must ask the user.
     /// (SecAccess is the login keychain's own ACL API; the data protection keychain doesn't use it.)
     @available(macOS, deprecated: 10.10)
-    static func selfOnlyAccess() -> SecAccess? {
+    public static func selfOnlyAccess() -> SecAccess? {
         var me: SecTrustedApplication?
         guard SecTrustedApplicationCreateFromPath(nil, &me) == errSecSuccess, let me else { return nil }
         var access: SecAccess?
@@ -57,14 +62,14 @@ public actor KeychainKeyStore: KeyStore {
 
     /// The data protection keychain needs an application identifier or access groups, which only
     /// provisioned builds carry.
-    static func isEntitledToDataProtectionKeychain() -> Bool {
+    public static func isEntitledToDataProtectionKeychain() -> Bool {
         guard let task = SecTaskCreateFromSelf(nil) else { return false }
         return ["com.apple.application-identifier", "keychain-access-groups"].contains {
             SecTaskCopyValueForEntitlement(task, $0 as CFString, nil) != nil
         }
     }
 
-    static func designatedRequirementTag() -> String {
+    public static func designatedRequirementTag() -> String {
         var code: SecCode?
         var staticCode: SecStaticCode?
         var requirement: SecRequirement?
@@ -238,18 +243,20 @@ public struct SealedFile: Sendable {
     private static let keyUnavailable = OSAllocatedUnfairLock(initialState: Set<String>())
 
     /// Per file: the last write ticket handed out, and the newest one that may no longer land.
-    struct WriteOrder {
+    public struct WriteOrder: Sendable {
+        public init() {}
+
         private var issued: [String: UInt64] = [:]
         private var floor: [String: UInt64] = [:]
 
-        mutating func issue(_ url: URL) -> UInt64 {
+        public mutating func issue(_ url: URL) -> UInt64 {
             let ticket = issued[url.path, default: 0] + 1
             issued[url.path] = ticket
             return ticket
         }
 
         /// True when `ticket` is newer than anything written or deleted since; it then becomes the floor.
-        mutating func commit(_ url: URL, _ ticket: UInt64) -> Bool {
+        public mutating func commit(_ url: URL, _ ticket: UInt64) -> Bool {
             guard ticket > floor[url.path, default: 0] else { return false }
             floor[url.path] = ticket
             return true
@@ -258,7 +265,7 @@ public struct SealedFile: Sendable {
 
     private static let order = OSAllocatedUnfairLock(initialState: WriteOrder())
 
-    static func writeProtected(_ data: Data, to url: URL) throws {
+    public static func writeProtected(_ data: Data, to url: URL) throws {
         try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         var target = url

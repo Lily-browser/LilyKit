@@ -10,11 +10,11 @@ import WebKit
 /// rules WebKit can't express run in the page (`cosmetic-filter.js`), fetched per site.
 @MainActor @Observable
 public final class AdBlocker {
-    static let builtinID = "lily.builtin.v1"
-    static let chunkPrefix = "lily.filters."
-    static let legacyEasyListID = "lily.easylist"
-    static let refreshInterval: TimeInterval = 7 * 86_400
-    static let maxListBytes = 15_000_000
+    public static let builtinID = "lily.builtin.v1"
+    public static let chunkPrefix = "lily.filters."
+    public static let legacyEasyListID = "lily.easylist"
+    public static let refreshInterval: TimeInterval = 7 * 86_400
+    public static let maxListBytes = 15_000_000
 
     public private(set) var status = "Preparing…"
     public private(set) var isUpdating = false
@@ -38,7 +38,7 @@ public final class AdBlocker {
 
     public var isEnabled: Bool { Preferences.flag(Preferences.Key.adBlock, default: true) }
 
-    var lastUpdated: Date? { UserDefaults.standard.object(forKey: Preferences.Key.filterListsUpdated) as? Date }
+    public var lastUpdated: Date? { UserDefaults.standard.object(forKey: Preferences.Key.filterListsUpdated) as? Date }
 
     private var lists: [WKContentRuleList] { (builtin.map { [$0] } ?? []) + filterLists }
 
@@ -94,7 +94,7 @@ public final class AdBlocker {
     }
 
     /// Attaches (or detaches) the lists for the page about to load in this tab.
-    func configure(_ controller: WKUserContentController, adsAllowed: Bool) {
+    public func configure(_ controller: WKUserContentController, adsAllowed: Bool) {
         let wanted = isEnabled && !adsAllowed ? lists : []
         let ids = wanted.compactMap(\.identifier)
         let key = ObjectIdentifier(controller)
@@ -104,12 +104,12 @@ public final class AdBlocker {
         applied[key] = ids
     }
 
-    func forget(_ controller: WKUserContentController) {
+    public func forget(_ controller: WKUserContentController) {
         applied[ObjectIdentifier(controller)] = nil
     }
 
     /// In-page hiding filters for a site and its parent domains (`a.b.example.com` → … → `example.com`).
-    func proceduralFilters(for host: String) -> [ProceduralFilter] {
+    public func proceduralFilters(for host: String) -> [ProceduralFilter] {
         guard isEnabled, !procedural.isEmpty else { return [] }
         var found: [ProceduralFilter] = []
         var name = Substring(host.lowercased())
@@ -122,7 +122,7 @@ public final class AdBlocker {
     }
 
     /// Self-test: in-page filters without downloading lists.
-    func useProceduralFilters(_ filters: [String: [ProceduralFilter]]) {
+    public func useProceduralFilters(_ filters: [String: [ProceduralFilter]]) {
         procedural = filters
     }
 

@@ -9,6 +9,11 @@ public struct ProceduralFilter: Codable, Sendable, Hashable {
         /// (a number of levels or a selector for closest()).
         public let type: String
         public let arg: String
+
+        public init(type: String, arg: String) {
+            self.type = type
+            self.arg = arg
+        }
     }
 
     public let selector: String
@@ -25,26 +30,26 @@ public struct ProceduralFilter: Codable, Sendable, Hashable {
 }
 
 /// The selector half of an element-hiding filter (`domains##selector`), classified and checked.
-enum CosmeticSelector: Equatable {
+public enum CosmeticSelector: Equatable {
     case css(String)
     case procedural(ProceduralFilter)
 
-    static let maxLength = 500
-    static let maxTextArgument = 200
+    public static let maxLength = 500
+    public static let maxTextArgument = 200
 
     /// Pseudo-classes WebKit's content blockers accept. Anything else (uBlock Origin or AdGuard
     /// extensions such as `:matches-css`, or a typo) is refused here, because one bad selector in a
     /// batch makes WebKit drop the whole rule.
-    static let pseudoClasses: Set<String> = [
+    public static let pseudoClasses: Set<String> = [
         "not", "is", "where", "has", "nth-child", "nth-last-child", "nth-of-type", "nth-last-of-type",
         "first-child", "last-child", "only-child", "first-of-type", "last-of-type", "only-of-type",
         "empty", "root", "checked", "disabled", "enabled", "link", "any-link", "target", "lang", "dir",
         "placeholder-shown", "required", "optional", "read-only", "read-write", "defined", "scope",
     ]
-    static let proceduralOperators: Set<String> = ["has-text", "min-text-length", "upward", "remove", "style"]
+    public static let proceduralOperators: Set<String> = ["has-text", "min-text-length", "upward", "remove", "style"]
     /// Properties `:style()` may set. Nothing that loads resources (backgrounds, content, fonts)
     /// or could overlay fake content: only visibility, layout and scrolling.
-    static let styleProperties: Set<String> = [
+    public static let styleProperties: Set<String> = [
         "display", "visibility", "opacity", "overflow", "overflow-x", "overflow-y", "overscroll-behavior", "position",
         "top", "right", "bottom", "left", "inset", "width", "height", "min-width", "min-height", "max-width", "max-height",
         "margin", "margin-top", "margin-right", "margin-bottom", "margin-left", "padding", "padding-top", "padding-right",
@@ -53,7 +58,7 @@ enum CosmeticSelector: Equatable {
     ]
 
     /// nil: unsupported (scriptlets, CSS injection, HTML filtering, unknown operators).
-    static func parse(_ raw: String) -> CosmeticSelector? {
+    public static func parse(_ raw: String) -> CosmeticSelector? {
         let body = raw.replacingOccurrences(of: ":-abp-contains(", with: ":has-text(")
             .replacingOccurrences(of: ":contains(", with: ":has-text(")
             .replacingOccurrences(of: ":-abp-has(", with: ":has(")
@@ -73,7 +78,7 @@ enum CosmeticSelector: Equatable {
     /// at-rules could smuggle extra CSS (e.g. tracking backgrounds) into every page, so they're
     /// refused; escapes (`.h-\[90px\]`) can't end a token and are fine, except a trailing one that
     /// would escape WebKit's own brace.
-    static func isValidCSS(_ selector: String) -> Bool {
+    public static func isValidCSS(_ selector: String) -> Bool {
         guard !selector.isEmpty, selector.count <= maxLength, !selector.lowercased().contains("url("),
               selector.rangeOfCharacter(from: CharacterSet(charactersIn: "{}<\n\r\u{0}")) == nil else { return false }
         var quote: Character?
@@ -183,7 +188,7 @@ enum CosmeticSelector: Equatable {
 
     /// `overflow: auto !important; position: static` → normalized declarations, or nil when any
     /// property is outside `styleProperties` or a value could do more than set a length or keyword.
-    static func styleDeclarations(_ text: String) -> String? {
+    public static func styleDeclarations(_ text: String) -> String? {
         guard text.count <= maxTextArgument else { return nil }
         var declarations: [String] = []
         for part in text.split(separator: ";") {

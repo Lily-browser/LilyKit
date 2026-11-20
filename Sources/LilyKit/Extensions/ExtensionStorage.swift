@@ -3,42 +3,44 @@ import Foundation
 /// `chrome.storage.local` for compatibility-mode extensions (macOS 14–15.3; on 15.4+ WebKit keeps
 /// extension storage itself). One sealed file per extension, capped like Chrome's 10 MB quota.
 @ExtensionActor
-final class ExtensionStorage {
-    static let quotaBytes = 10 * 1024 * 1024
+public final class ExtensionStorage {
+    public static let quotaBytes = 10 * 1024 * 1024
 
-    struct QuotaExceeded: LocalizedError {
-        var errorDescription: String? { "The extension's storage is full (10 MB)." }
+    public struct QuotaExceeded: LocalizedError {
+        public init() {}
+
+        public var errorDescription: String? { "The extension's storage is full (10 MB)." }
     }
 
     private let directory: URL?
     private let keys: KeyStore
     private var cache: [String: [String: JSONValue]] = [:]
 
-    nonisolated init(directory: URL?, keys: KeyStore) {
+    public nonisolated init(directory: URL?, keys: KeyStore) {
         self.directory = directory.map { $0.appendingPathComponent("ExtensionStorage", isDirectory: true) }
         self.keys = keys
     }
 
-    func get(_ extensionID: String, keys requested: [String]?) async -> [String: JSONValue] {
+    public func get(_ extensionID: String, keys requested: [String]?) async -> [String: JSONValue] {
         let items = await load(extensionID)
         guard let requested else { return items }
         return items.filter { requested.contains($0.key) }
     }
 
-    func set(_ extensionID: String, _ items: [String: JSONValue]) async throws {
+    public func set(_ extensionID: String, _ items: [String: JSONValue]) async throws {
         var stored = await load(extensionID)
         stored.merge(items) { _, new in new }
         guard JSONValue.object(stored).jsonData().count <= Self.quotaBytes else { throw QuotaExceeded() }
         await save(extensionID, stored)
     }
 
-    func remove(_ extensionID: String, keys removed: [String]) async {
+    public func remove(_ extensionID: String, keys removed: [String]) async {
         var stored = await load(extensionID)
         removed.forEach { stored[$0] = nil }
         await save(extensionID, stored)
     }
 
-    func clear(_ extensionID: String) async {
+    public func clear(_ extensionID: String) async {
         await save(extensionID, [:])
     }
 

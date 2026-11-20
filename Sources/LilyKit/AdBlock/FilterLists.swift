@@ -5,7 +5,14 @@ public struct FilterList: Identifiable, Sendable, Hashable {
     public let id: String
     public let name: String
     public let summary: String
-    let sources: [URL]
+    public let sources: [URL]
+
+    public init(id: String, name: String, summary: String, sources: [URL]) {
+        self.id = id
+        self.name = name
+        self.summary = summary
+        self.sources = sources
+    }
 }
 
 /// The lists offered in Settings → Privacy. All are fetched over HTTPS from their maintainers and
@@ -28,10 +35,10 @@ public enum FilterLists {
                    sources: [URL(string: "https://filters.adtidy.org/extension/ublock/filters/14.txt")!]),
     ]
 
-    static func list(_ id: String) -> FilterList? { all.first { $0.id == id } }
+    public static func list(_ id: String) -> FilterList? { all.first { $0.id == id } }
 
     /// Turned-on list ids. Before per-list settings, one switch covered EasyList + EasyPrivacy.
-    static var enabled: Set<String> {
+    public static var enabled: Set<String> {
         get {
             if let ids = UserDefaults.standard.stringArray(forKey: Preferences.Key.filterLists) {
                 return Set(ids).intersection(all.map(\.id))

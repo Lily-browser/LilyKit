@@ -51,6 +51,12 @@ public struct IPCReply: Codable, Sendable, Equatable {
     public var result: JSONValue?
     public var error: IPCError?
 
+    public init(ok: Bool, result: JSONValue? = nil, error: IPCError? = nil) {
+        self.ok = ok
+        self.result = result
+        self.error = error
+    }
+
     public static func success(_ result: JSONValue) -> IPCReply { IPCReply(ok: true, result: result, error: nil) }
     public static func failure(_ error: IPCError) -> IPCReply { IPCReply(ok: false, result: nil, error: error) }
 
@@ -61,17 +67,17 @@ public struct IPCReply: Codable, Sendable, Equatable {
 
 /// Helpers for reading typed params out of a payload.
 public extension JSONValue {
-    func required(_ key: String) throws -> JSONValue {
+    public func required(_ key: String) throws -> JSONValue {
         guard let v = self[key], !v.isNull else { throw IPCError.invalidParams("Missing '\(key)'") }
         return v
     }
 
-    func requiredString(_ key: String) throws -> String {
+    public func requiredString(_ key: String) throws -> String {
         guard let s = try required(key).string else { throw IPCError.invalidParams("'\(key)' must be a string") }
         return s
     }
 
-    func requiredUUID(_ key: String) throws -> UUID {
+    public func requiredUUID(_ key: String) throws -> UUID {
         guard let id = UUID(uuidString: try requiredString(key)) else { throw IPCError.invalidParams("'\(key)' must be a UUID") }
         return id
     }

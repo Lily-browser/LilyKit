@@ -13,11 +13,25 @@ public struct InjectionManifest: Codable, Sendable, Equatable {
         public var injectionTime: InjectionTime
         public var mainFrameOnly: Bool
         public var matches: [String]
+
+        public init(id: String, file: String, injectionTime: InjectionTime, mainFrameOnly: Bool, matches: [String]) {
+            self.id = id
+            self.file = file
+            self.injectionTime = injectionTime
+            self.mainFrameOnly = mainFrameOnly
+            self.matches = matches
+        }
     }
 
     public var version: Int
     public var contentWorld: String
     public var scripts: [Script]
+
+    public init(version: Int, contentWorld: String, scripts: [Script]) {
+        self.version = version
+        self.contentWorld = contentWorld
+        self.scripts = scripts
+    }
 
     public static func load(from url: URL) throws -> InjectionManifest {
         let manifest = try JSONDecoder().decode(InjectionManifest.self, from: Data(contentsOf: url))

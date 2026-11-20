@@ -8,7 +8,7 @@ public enum SourceBrowser: String, CaseIterable, Identifiable, Sendable, Codable
 
     public enum Engine: Sendable { case chromium, safari, firefox }
 
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .chrome: return "Google Chrome"
         case .safari: return "Safari"
@@ -18,7 +18,7 @@ public enum SourceBrowser: String, CaseIterable, Identifiable, Sendable, Codable
         }
     }
 
-    var bundleIdentifier: String {
+    public var bundleIdentifier: String {
         switch self {
         case .chrome: return "com.google.Chrome"
         case .safari: return "com.apple.Safari"
@@ -29,7 +29,7 @@ public enum SourceBrowser: String, CaseIterable, Identifiable, Sendable, Codable
     }
 
     /// Shown when the app isn't installed and its icon can't be looked up.
-    var symbol: String {
+    public var symbol: String {
         switch self {
         case .chrome: return "globe"
         case .safari: return "safari"
@@ -39,7 +39,7 @@ public enum SourceBrowser: String, CaseIterable, Identifiable, Sendable, Codable
         }
     }
 
-    var engine: Engine {
+    public var engine: Engine {
         switch self {
         case .chrome, .arc, .dia: return .chromium
         case .safari: return .safari
@@ -48,10 +48,10 @@ public enum SourceBrowser: String, CaseIterable, Identifiable, Sendable, Codable
     }
 
     /// The folder the user grants access to: Application Support for most, `~/Library/Safari` for Safari.
-    var root: MigrationRoot { self == .safari ? .safari : .applicationSupport }
+    public var root: MigrationRoot { self == .safari ? .safari : .applicationSupport }
 
     /// The browser's folder, relative to its root.
-    var relativePath: String {
+    public var relativePath: String {
         switch self {
         case .chrome: return "Google/Chrome"
         case .safari: return ""
@@ -62,22 +62,22 @@ public enum SourceBrowser: String, CaseIterable, Identifiable, Sendable, Codable
     }
 
     /// Chromium "User Data" folder inside the browser folder ("" when the browser folder is it).
-    var userDataPath: String {
+    public var userDataPath: String {
         switch self {
         case .arc, .dia: return "User Data"
         default: return ""
         }
     }
 
-    var supportsSpaces: Bool { self == .arc }
+    public var supportsSpaces: Bool { self == .arc }
 }
 
 /// A folder outside the sandbox that the user grants once.
 public enum MigrationRoot: String, CaseIterable, Sendable, Codable {
     case applicationSupport, safari
 
-    var displayPath: String { self == .safari ? "~/Library/Safari" : "~/Library/Application Support" }
-    var relativeToHome: String { self == .safari ? "Library/Safari" : "Library/Application Support" }
+    public var displayPath: String { self == .safari ? "~/Library/Safari" : "~/Library/Application Support" }
+    public var relativeToHome: String { self == .safari ? "Library/Safari" : "Library/Application Support" }
 }
 
 /// What to bring over from one browser.
@@ -85,38 +85,74 @@ public struct MigrationOptions: Equatable, Sendable {
     public var bookmarks = true
     public var history = true
     public var spaces = true
+
+    public init(bookmarks: Bool = true, history: Bool = true, spaces: Bool = true) {
+        self.bookmarks = bookmarks
+        self.history = history
+        self.spaces = spaces
+    }
 }
 
-struct ImportedBookmark: Equatable, Sendable {
-    var title: String
-    var url: URL
+public struct ImportedBookmark: Equatable, Sendable {
+    public var title: String
+    public var url: URL
     /// Folder names from the top ("Bookmarks Bar", "Work").
-    var folders: [String]
+    public var folders: [String]
+
+    public init(title: String, url: URL, folders: [String]) {
+        self.title = title
+        self.url = url
+        self.folders = folders
+    }
 }
 
-struct ImportedVisit: Equatable, Sendable {
-    var url: URL
-    var title: String
-    var visitCount: Int
-    var lastVisit: Date
+public struct ImportedVisit: Equatable, Sendable {
+    public var url: URL
+    public var title: String
+    public var visitCount: Int
+    public var lastVisit: Date
+
+    public init(url: URL, title: String, visitCount: Int, lastVisit: Date) {
+        self.url = url
+        self.title = title
+        self.visitCount = visitCount
+        self.lastVisit = lastVisit
+    }
 }
 
-struct ImportedSpace: Equatable, Sendable {
-    struct Tab: Equatable, Sendable {
-        var title: String
-        var url: URL
-        var pinned: Bool
+public struct ImportedSpace: Equatable, Sendable {
+    public struct Tab: Equatable, Sendable {
+        public var title: String
+        public var url: URL
+        public var pinned: Bool
+
+        public init(title: String, url: URL, pinned: Bool) {
+            self.title = title
+            self.url = url
+            self.pinned = pinned
+        }
     }
 
-    var name: String
-    var tabs: [Tab]
+    public var name: String
+    public var tabs: [Tab]
+
+    public init(name: String, tabs: [Tab]) {
+        self.name = name
+        self.tabs = tabs
+    }
 }
 
 /// Everything read from one browser.
-struct BrowserData: Equatable, Sendable {
-    var bookmarks: [ImportedBookmark] = []
-    var history: [ImportedVisit] = []
-    var spaces: [ImportedSpace] = []
+public struct BrowserData: Equatable, Sendable {
+    public var bookmarks: [ImportedBookmark] = []
+    public var history: [ImportedVisit] = []
+    public var spaces: [ImportedSpace] = []
+
+    public init(bookmarks: [ImportedBookmark] = [], history: [ImportedVisit] = [], spaces: [ImportedSpace] = []) {
+        self.bookmarks = bookmarks
+        self.history = history
+        self.spaces = spaces
+    }
 }
 
 /// What a scan found, before importing.
@@ -124,21 +160,27 @@ public struct BrowserScan: Equatable, Sendable {
     public var bookmarks: Int
     public var history: Int
     public var spaces: Int
+
+    public init(bookmarks: Int, history: Int, spaces: Int) {
+        self.bookmarks = bookmarks
+        self.history = history
+        self.spaces = spaces
+    }
 }
 
 /// Address handling for imports and de-duplication.
 public enum URLNormalizer {
-    static let maxLength = 4_096
+    public static let maxLength = 4_096
 
     /// Only web pages are imported; `javascript:` bookmarklets, `file:` and browser-internal pages aren't.
-    static func isImportable(_ url: URL) -> Bool {
+    public static func isImportable(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http", url.host?.isEmpty == false else { return false }
         return url.absoluteString.count <= maxLength
     }
 
     /// The address to store: scheme and host lowercased, default ports and tracking parameters
     /// removed, and a trailing slash dropped from paths (not from the root).
-    static func clean(_ url: URL) -> URL? {
+    public static func clean(_ url: URL) -> URL? {
         guard isImportable(url), var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
         parts.scheme = parts.scheme?.lowercased()
         parts.host = parts.host?.lowercased()

@@ -6,19 +6,25 @@ import Foundation
 /// (`applicationIdentifier`). Lines are logged at debug level, which isn't kept on disk: they show
 /// only while someone runs `log stream --level debug`. Off, the shim stops forwarding after its
 /// first question.
-enum ExtensionConsole {
-    static let applicationIdentifier = "dev.lily.console"
+public enum ExtensionConsole {
+    public static let applicationIdentifier = "dev.lily.console"
 
-    struct Line: Decodable, Equatable {
-        enum Action: String, Decodable { case enabled, log }
-        enum Level: String, Decodable { case error, warn, info, log }
-        let action: Action
-        let level: Level?
-        let text: String?
+    public struct Line: Decodable, Equatable {
+        public enum Action: String, Decodable { case enabled, log }
+        public enum Level: String, Decodable { case error, warn, info, log }
+        public let action: Action
+        public let level: Level?
+        public let text: String?
+
+        public init(action: Action, level: Level?, text: String?) {
+            self.action = action
+            self.level = level
+            self.text = text
+        }
     }
 
     /// Answers the shim: whether to forward (`enabled`), or logs one line (`log`).
-    static func handle(_ message: Any, extensionName: String, enabled: Bool) throws -> Any? {
+    public static func handle(_ message: Any, extensionName: String, enabled: Bool) throws -> Any? {
         let line = try decode(message)
         switch line.action {
         case .enabled:
@@ -30,7 +36,7 @@ enum ExtensionConsole {
         }
     }
 
-    static func decode(_ message: Any) throws -> Line {
+    public static func decode(_ message: Any) throws -> Line {
         guard JSONSerialization.isValidJSONObject(message), let data = try? JSONSerialization.data(withJSONObject: message),
               data.count <= 8 * 1024, var line = try? JSONDecoder().decode(Line.self, from: data) else {
             throw ExtensionConsoleError()
@@ -39,7 +45,9 @@ enum ExtensionConsole {
         return line
     }
 
-    struct ExtensionConsoleError: LocalizedError {
-        var errorDescription: String? { "Invalid console line" }
+    public struct ExtensionConsoleError: LocalizedError {
+        public init() {}
+
+        public var errorDescription: String? { "Invalid console line" }
     }
 }

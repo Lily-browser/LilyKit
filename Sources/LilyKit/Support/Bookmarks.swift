@@ -12,13 +12,19 @@ public final class Bookmarks {
         public var url: URL?
         public var children: [Node]?
 
+        public init(title: String, url: URL? = nil, children: [Node]? = nil) {
+            self.title = title
+            self.url = url
+            self.children = children
+        }
+
         public var isFolder: Bool { children != nil }
 
         public static func folder(_ title: String, _ children: [Node]) -> Node { Node(title: title, url: nil, children: children) }
         public static func link(_ title: String, _ url: URL) -> Node { Node(title: title, url: url, children: nil) }
     }
 
-    static let maxLinks = 100_000
+    public static let maxLinks = 100_000
 
     public private(set) var root: [Node] = [] { didSet { index = nil; generation &+= 1 } }
     /// Bumped on every change; see `History.generation`.

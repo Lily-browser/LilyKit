@@ -2,8 +2,8 @@ import Foundation
 
 /// The built-in list, used even offline: major ad and tracking networks, YouTube's ad endpoints,
 /// and common ad containers.
-enum BuiltinBlocklist {
-    static let domains = [
+public enum BuiltinBlocklist {
+    public static let domains = [
         "doubleclick.net", "googlesyndication.com", "googleadservices.com", "adservice.google.com", "googletagservices.com",
         "google-analytics.com", "googletagmanager.com", "pagead2.googlesyndication.com", "imasdk.googleapis.com",
         "amazon-adsystem.com", "adnxs.com", "adsrvr.org", "criteo.com", "criteo.net", "taboola.com", "outbrain.com",
@@ -23,18 +23,18 @@ enum BuiltinBlocklist {
         "nativo.com", "zemanta.com", "adblade.com", "infolinks.com", "buysellads.com", "carbonads.net", "ad.doubleclick.net",
     ]
 
-    static let paths = [
+    public static let paths = [
         "youtube.com/api/stats/ads", "youtube.com/pagead/", "youtube.com/ptracking", "youtube.com/get_midroll_",
         "/pagead/adview", "/pagead/conversion", "/ads/ga-audiences",
     ]
 
-    static let selectors = [
+    public static let selectors = [
         "ins.adsbygoogle", ".adsbygoogle", "[id^='google_ads_iframe']", "[id^='div-gpt-ad']", "iframe[src*='doubleclick.net']",
         "iframe[src*='googlesyndication.com']", ".ad-banner", ".ad-container", ".ad-slot", ".advertisement", "[data-ad-slot]",
         "[aria-label='Advertisement']", ".taboola-feed", "[id^='taboola-']", ".OUTBRAIN", "[data-widget-id^='outbrain']",
     ]
 
-    static var rules: [[String: Any]] {
+    public static var rules: [[String: Any]] {
         var rules: [[String: Any]] = domains.map {
             ["trigger": ["url-filter": "^[^:]+://+([^:/]+\\.)?" + FilterListConverter.regex(for: $0) + "[/:]"], "action": ["type": "block"]]
         }

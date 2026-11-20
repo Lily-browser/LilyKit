@@ -4,13 +4,13 @@ import Foundation
 /// on by default). What you type goes to the engine you chose and no one else: Kagi has no public
 /// suggestion endpoint, so with Kagi nothing is fetched. Never in private windows, never for
 /// addresses, emails, file paths or long text. See docs/PRIVACY.md.
-enum SearchSuggestions {
-    static let maxResponseBytes = 64 * 1024
-    static let maxSuggestions = 5
-    static let maxLength = 200
+public enum SearchSuggestions {
+    public static let maxResponseBytes = 64 * 1024
+    public static let maxSuggestions = 5
+    public static let maxLength = 200
 
     /// The engine's OpenSearch suggestion endpoint for `query`, or nil (Kagi).
-    static func endpoint(for engine: Preferences.SearchEngine, query: String) -> URL? {
+    public static func endpoint(for engine: Preferences.SearchEngine, query: String) -> URL? {
         let base: String
         var items: [URLQueryItem]
         switch engine {
@@ -42,7 +42,7 @@ enum SearchSuggestions {
     /// nothing with "://" or "@", no scheme ("mailto:", "localhost:3000"), no file paths, no
     /// tabs or line breaks, and no word that is itself an address, an IP literal, or a long mix of
     /// letters and digits (a token or key).
-    static func shouldFetch(_ query: String, engine: Preferences.SearchEngine, enabled: Bool, isPrivate: Bool,
+    public static func shouldFetch(_ query: String, engine: Preferences.SearchEngine, enabled: Bool, isPrivate: Bool,
                             resolver: URLResolver) -> Bool {
         guard enabled, !isPrivate, engine != .kagi else { return false }
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -64,13 +64,13 @@ enum SearchSuggestions {
     }
 
     /// 24+ characters mixing letters and digits: an API key, token or ID rather than words.
-    static func looksLikeSecret(_ token: String) -> Bool {
+    public static func looksLikeSecret(_ token: String) -> Bool {
         token.count >= 24 && token.contains(where: \.isLetter) && token.contains(where: \.isNumber)
     }
 
     /// Decodes an OpenSearch response, `["query", ["s1", "s2", …], …]`, into at most five clean,
     /// distinct suggestions. Nil for anything else (or more than 64 KB).
-    static func decode(_ data: Data) -> [String]? {
+    public static func decode(_ data: Data) -> [String]? {
         guard data.count <= maxResponseBytes,
               let json = try? JSONSerialization.jsonObject(with: data) as? [Any],
               json.count >= 2, json[0] is String, let list = json[1] as? [Any] else { return nil }
@@ -84,13 +84,13 @@ enum SearchSuggestions {
         return out
     }
 
-    static let maxScalars = 400
-    static let invisible: Set<UInt32> = [0x115F, 0x1160, 0x3164, 0xFFA0, 0x034F]
+    public static let maxScalars = 400
+    public static let invisible: Set<UInt32> = [0x115F, 0x1160, 0x3164, 0xFFA0, 0x034F]
 
     /// Control characters become spaces, invisible characters (bidi overrides, zero-width, Hangul
     /// fillers) are dropped, whitespace is collapsed; nil when empty, longer than 200 characters
     /// or 400 Unicode scalars.
-    static func sanitize(_ text: String) -> String? {
+    public static func sanitize(_ text: String) -> String? {
         var scalars = String.UnicodeScalarView()
         for scalar in text.unicodeScalars {
             switch scalar.properties.generalCategory {
@@ -109,14 +109,14 @@ enum SearchSuggestions {
 }
 
 /// Fetches suggestions; tests inject their own.
-protocol SearchSuggestionFetching: Sendable {
+public protocol SearchSuggestionFetching: Sendable {
     func suggestions(for query: String, engine: Preferences.SearchEngine) async throws -> [String]
     /// The command bar closed: drop connections so the next one can't be linked to this one.
     func close()
 }
 
 extension SearchSuggestionFetching {
-    func close() {}
+    public func close() {}
 }
 
 /// Network fetcher with its own ephemeral session, one per command bar opening: no cookies,
@@ -124,11 +124,11 @@ extension SearchSuggestionFetching {
 /// opening, so the engine can't tie suggestions to your searches, logins or each other. Safari's
 /// user agent, as for pages. Redirects are refused, and the answer must come from the engine's
 /// own host over HTTPS.
-final class SearchSuggestionClient: SearchSuggestionFetching {
+public final class SearchSuggestionClient: SearchSuggestionFetching {
     private let session: URLSession
 
     /// The user agent is the host app's: it matches the one its pages send (Safari's, per platform).
-    static func configuration(userAgent: String) -> URLSessionConfiguration {
+    public static func configuration(userAgent: String) -> URLSessionConfiguration {
         let config = URLSessionConfiguration.ephemeral
         config.tlsMinimumSupportedProtocolVersion = .TLSv12
         config.httpCookieAcceptPolicy = .never
@@ -148,19 +148,19 @@ final class SearchSuggestionClient: SearchSuggestionFetching {
         return config
     }
 
-    init(userAgent: String, configuration: URLSessionConfiguration? = nil) {
+    public init(userAgent: String, configuration: URLSessionConfiguration? = nil) {
         session = URLSession(configuration: configuration ?? Self.configuration(userAgent: userAgent))
     }
 
-    func close() { session.invalidateAndCancel() }
+    public func close() { session.invalidateAndCancel() }
 
     /// Refuses every redirect; the 3xx response itself then fails the status check.
     private final class NoRedirects: NSObject, URLSessionTaskDelegate, Sendable {
-        func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+        public func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                         newRequest request: URLRequest) async -> URLRequest? { nil }
     }
 
-    func suggestions(for query: String, engine: Preferences.SearchEngine) async throws -> [String] {
+    public func suggestions(for query: String, engine: Preferences.SearchEngine) async throws -> [String] {
         guard let url = SearchSuggestions.endpoint(for: engine, query: query), let host = url.host else { return [] }
         var request = URLRequest(url: url)
         request.httpShouldHandleCookies = false
@@ -185,6 +185,8 @@ final class SearchSuggestionClient: SearchSuggestionFetching {
 }
 
 /// Never fetches (the self-test, so it doesn't reach a search engine).
-struct NoSearchSuggestions: SearchSuggestionFetching {
-    func suggestions(for query: String, engine: Preferences.SearchEngine) async throws -> [String] { [] }
+public struct NoSearchSuggestions: SearchSuggestionFetching {
+    public init() {}
+
+    public func suggestions(for query: String, engine: Preferences.SearchEngine) async throws -> [String] { [] }
 }

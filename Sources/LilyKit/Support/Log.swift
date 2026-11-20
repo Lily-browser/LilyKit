@@ -1,7 +1,7 @@
 import os
 
 public enum Log {
-    static let subsystem = "dev.lily.browser"
+    public static let subsystem = "dev.lily.browser"
     public static let app = Logger(subsystem: subsystem, category: "app")
     public static let ipc = Logger(subsystem: subsystem, category: "ipc")
     public static let scripts = Logger(subsystem: subsystem, category: "scripts")

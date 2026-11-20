@@ -7,14 +7,14 @@ import Foundation
 /// worker shim (`injections/extension-worker-compat.js`) in front of the background, which gives
 /// those calls inert stand-ins. It's added before the audit and the hash, so the shim is part of
 /// the reviewed, pinned copy, and the extension's own files are untouched.
-enum ExtensionCompat {
-    static let folder = "lily-compat"
-    static let shimPath = "\(folder)/worker-compat.js"
-    static let entryPath = "\(folder)/background.js"
+public enum ExtensionCompat {
+    public static let folder = "lily-compat"
+    public static let shimPath = "\(folder)/worker-compat.js"
+    public static let entryPath = "\(folder)/background.js"
 
     /// `package` with the shim in front of its background, or unchanged when it has none (or a
     /// background page, which can include scripts itself) or its manifest can't be rewritten.
-    static func apply(to package: ExtensionPackage, shim: Data) -> ExtensionPackage {
+    public static func apply(to package: ExtensionPackage, shim: Data) -> ExtensionPackage {
         guard package.files[shimPath] == nil, let data = package.manifest,
               var manifest = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               var background = manifest["background"] as? [String: Any] else { return package }

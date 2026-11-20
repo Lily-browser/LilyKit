@@ -8,18 +8,30 @@ public final class AssistantContextStore {
         public var url: String
         public var title: String
         public var tabID: UUID?
+
+        public init(url: String, title: String, tabID: UUID? = nil) {
+            self.url = url
+            self.title = title
+            self.tabID = tabID
+        }
     }
 
-    struct TabContext {
-        var events = 0
-        var page: Visit?
-        var selection: String?
-        var videoID: String?
+    public struct TabContext {
+        public var events = 0
+        public var page: Visit?
+        public var selection: String?
+        public var videoID: String?
+
+        public init(page: Visit? = nil, selection: String? = nil, videoID: String? = nil) {
+            self.page = page
+            self.selection = selection
+            self.videoID = videoID
+        }
     }
 
-    static let maxHistory = 100
+    public static let maxHistory = 100
     private var tabs: [UUID: TabContext] = [:]
-    private(set) var history: [Visit] = []
+    public private(set) var history: [Visit] = []
 
     public init() {}
 
