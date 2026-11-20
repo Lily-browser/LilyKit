@@ -7,6 +7,8 @@ public final class ExtensionStorage {
     public static let quotaBytes = 10 * 1024 * 1024
 
     public struct QuotaExceeded: LocalizedError {
+        public init() {}
+
         public var errorDescription: String? { "The extension's storage is full (10 MB)." }
     }
 

@@ -46,6 +46,8 @@ public enum ExtensionConsole {
     }
 
     public struct ExtensionConsoleError: LocalizedError {
+        public init() {}
+
         public var errorDescription: String? { "Invalid console line" }
     }
 }

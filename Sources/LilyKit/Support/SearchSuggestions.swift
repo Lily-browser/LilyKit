@@ -186,5 +186,7 @@ public final class SearchSuggestionClient: SearchSuggestionFetching {
 
 /// Never fetches (the self-test, so it doesn't reach a search engine).
 public struct NoSearchSuggestions: SearchSuggestionFetching {
+    public init() {}
+
     public func suggestions(for query: String, engine: Preferences.SearchEngine) async throws -> [String] { [] }
 }

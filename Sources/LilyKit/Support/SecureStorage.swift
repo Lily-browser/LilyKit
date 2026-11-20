@@ -244,6 +244,8 @@ public struct SealedFile: Sendable {
 
     /// Per file: the last write ticket handed out, and the newest one that may no longer land.
     public struct WriteOrder: Sendable {
+        public init() {}
+
         private var issued: [String: UInt64] = [:]
         private var floor: [String: UInt64] = [:]
 

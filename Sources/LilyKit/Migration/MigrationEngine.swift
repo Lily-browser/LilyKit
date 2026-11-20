@@ -3,6 +3,8 @@ import Foundation
 /// Where every migration file read and SQLite query runs: off the main thread, one at a time.
 @globalActor
 public actor MigrationActor {
+    public init() {}
+
     public static let shared = MigrationActor()
 }
 

@@ -8,6 +8,8 @@ import SQLite3
 /// user is ever put into SQL. (SQLite's C interface hands back C strings, which are copied into
 /// Swift strings immediately; that's the only pointer use here.)
 public struct SQLiteReader {
+    public init() {}
+
     public struct Failure: LocalizedError {
         public let reason: String
 

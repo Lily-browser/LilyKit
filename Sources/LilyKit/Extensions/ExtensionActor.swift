@@ -5,6 +5,8 @@ import Foundation
 /// main-thread only, so the runtime itself stays on the main actor and calls in here for file work.)
 @globalActor
 public actor ExtensionActor {
+    public init() {}
+
     public static let shared = ExtensionActor()
 }
 

@@ -10,6 +10,8 @@ import Foundation
 /// to their own in-extension sign-in, storage and web flows instead of hanging on a host that
 /// never answers. No process is ever started here.
 public actor NativeMessagingHostManager {
+    public init() {}
+
     public static let shared = NativeMessagingHostManager()
 
     public struct Unsupported: LocalizedError, Equatable {
