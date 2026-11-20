@@ -31,7 +31,7 @@ public final class AssistantContextStore {
 
     public static let maxHistory = 100
     private var tabs: [UUID: TabContext] = [:]
-    private(set) var history: [Visit] = []
+    public private(set) var history: [Visit] = []
 
     public init() {}
 
