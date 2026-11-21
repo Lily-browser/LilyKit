@@ -91,6 +91,16 @@ public struct TabCollection: Equatable, Sendable {
         tabs.insert(tab, at: at)
     }
 
+    /// A copy of a tab (same page and title) right after it, selected. Nil if the tab doesn't exist.
+    @discardableResult
+    public mutating func duplicate(_ id: UUID, now: Date = Date()) -> TabModel? {
+        guard let i = index(of: id) else { return nil }
+        let copy = TabModel(spaceID: tabs[i].spaceID, url: tabs[i].url, title: tabs[i].title, isPinned: false, lastActivated: now)
+        tabs.insert(copy, at: tabs[i].isPinned ? pinnedEnd : i + 1)
+        activate(copy.id, now: now)
+        return copy
+    }
+
     /// Updates a tab's page state (called as the page navigates).
     public mutating func update(_ id: UUID, _ change: (inout TabModel) -> Void) {
         guard let i = index(of: id) else { return }
@@ -99,9 +109,10 @@ public struct TabCollection: Equatable, Sendable {
 
     /// Closes a tab and selects the next one per `then`. Returns the removed tab.
     /// With `keepSpaceNonEmpty`, closing a space's last tab leaves a fresh blank one (iOS); otherwise the
-    /// space may end up empty (Mac).
+    /// space may end up empty (Mac). With `remember: false` (private tabs) it never appears in Reopen Closed Tab.
     @discardableResult
-    public mutating func close(_ id: UUID, then: AfterClose = .default, keepSpaceNonEmpty: Bool = false, now: Date = Date()) -> TabModel? {
+    public mutating func close(_ id: UUID, then: AfterClose = .default, keepSpaceNonEmpty: Bool = false, remember: Bool = true,
+                               now: Date = Date()) -> TabModel? {
         guard let index = index(of: id) else { return nil }
         let wasActive = activeID == id
         let mode = wasActive ? then : .lastUsed
@@ -113,7 +124,7 @@ public struct TabCollection: Equatable, Sendable {
         }
         leaveSplit(id)
         let tab = tabs.remove(at: index)
-        if let url = tab.url, url.scheme != "about" {
+        if remember, let url = tab.url, url.scheme != "about" {
             recentlyClosed.append(ClosedTab(url: url, pinned: tab.isPinned, index: index, spaceID: tab.spaceID))
             if recentlyClosed.count > Self.maxRecentlyClosed { recentlyClosed.removeFirst() }
         }
@@ -320,28 +331,33 @@ public struct TabCollection: Equatable, Sendable {
 
     // MARK: Session
 
-    /// What survives a relaunch. Nil when there is nothing valid to save (no tabs).
-    public var session: TabSession? {
+    /// What survives a relaunch: web pages only (Mac default), see `session(excluding:keepingBlankTabs:)`.
+    public var session: TabSession? { session(excluding: []) }
+
+    /// The saved session without `excluded` tabs (private ones). Only web pages are saved, plus blank tabs when
+    /// `keepingBlankTabs` (iOS). Nil when nothing is left to save. A selection that isn't saved falls back to a
+    /// saved tab in the current space.
+    public func session(excluding excluded: Set<UUID>, keepingBlankTabs: Bool = false) -> TabSession? {
         guard let activeID else { return nil }
-        let saved = TabSession(spaces: spaces, tabs: tabs.filter { $0.url.map { ["http", "https"].contains($0.scheme?.lowercased() ?? "") } ?? false },
-                               activeID: activeID, currentSpaceID: currentSpaceID)
-        // The selection may be a blank tab that isn't saved: fall back to the first saved tab in the space.
-        guard !saved.tabs.isEmpty else { return nil }
-        var result = saved
-        if !saved.tabs.contains(where: { $0.id == activeID }) {
-            result.activeID = (saved.tabs.first { $0.spaceID == currentSpaceID } ?? saved.tabs[0]).id
+        let kept = tabs.filter { tab in
+            guard !excluded.contains(tab.id) else { return false }
+            guard let url = tab.url else { return keepingBlankTabs }
+            return ["http", "https"].contains(url.scheme?.lowercased() ?? "")
         }
+        guard !kept.isEmpty else { return nil }
+        let selected = kept.contains { $0.id == activeID } ? activeID : (kept.first { $0.spaceID == currentSpaceID } ?? kept[0]).id
+        let result = TabSession(spaces: spaces, tabs: kept, activeID: selected, currentSpaceID: currentSpaceID)
         return result.isValid ? result : nil
     }
 
-    /// Replaces the contents with a saved session. Tabs come back asleep (they load when first used). Invalid
-    /// sessions are ignored and `false` is returned.
+    /// Replaces the contents with a saved session. With `asleep` (default) pages come back unloaded and load when
+    /// first used; the selected tab is always awake. Invalid sessions are ignored and `false` is returned.
     @discardableResult
-    public mutating func restore(_ session: TabSession, now: Date = Date()) -> Bool {
+    public mutating func restore(_ session: TabSession, asleep: Bool = true, now: Date = Date()) -> Bool {
         guard session.isValid else { return false }
         self = TabCollection(spaces: session.spaces)
         currentSpaceID = session.currentSpaceID
-        tabs = session.tabs.map { var t = $0; t.splitID = nil; t.isSleeping = t.url != nil; return t }
+        tabs = session.tabs.map { var t = $0; t.splitID = nil; t.isSleeping = asleep && t.url != nil; return t }
         setActive(session.activeID, now: now)
         tabs[index(of: session.activeID)!].lastActivated = session.tabs.first { $0.id == session.activeID }!.lastActivated
         return true

@@ -188,4 +188,42 @@ import Testing
         c.activate(number: 1, now: t0); #expect(c.activeID == ids[0])
         c.cycle(by: -1, now: t0); #expect(c.activeID == ids[2])
     }
+
+    @Test func privateTabsAreNeitherRememberedNorSaved() throws {
+        var c = make()
+        let keep = c.create(url: url("a.com"), now: t0)
+        let priv = c.create(url: url("secret.com"), now: t0)
+        let saved = try #require(c.session(excluding: [priv.id]))
+        #expect(saved.tabs.map(\.id) == [keep.id])
+        #expect(saved.activeID == keep.id) // selection was the private tab
+        c.close(priv.id, remember: false, now: t0)
+        #expect(c.recentlyClosed.isEmpty)
+    }
+
+    @Test func blankTabsAreSavedWhenAsked() throws {
+        var c = make()
+        let blank = c.create(url: nil, now: t0)
+        #expect(c.session == nil)
+        let saved = try #require(c.session(excluding: [], keepingBlankTabs: true))
+        #expect(saved.tabs.map(\.id) == [blank.id])
+    }
+
+    @Test func restoreCanKeepTabsAwake() {
+        var c = make()
+        c.create(url: url("a.com"), now: t0)
+        c.create(url: url("b.com"), activate: false, now: t0)
+        let saved = c.session!
+        var d = TabCollection()
+        d.restore(saved, asleep: false, now: t0)
+        #expect(d.tabs.allSatisfy { !$0.isSleeping })
+    }
+
+    @Test func duplicateSitsRightAfterAndIsSelected() {
+        var c = make()
+        let a = c.create(url: url("a.com"), title: "A", now: t0)
+        let b = c.create(url: url("b.com"), now: t0)
+        let copy = c.duplicate(a.id, now: t0)
+        #expect(c.tabs.map(\.id) == [a.id, copy!.id, b.id])
+        #expect(copy?.title == "A" && c.activeID == copy?.id)
+    }
 }
