@@ -14,7 +14,7 @@ public final class AdBlocker {
     public static let chunkPrefix = "lily.filters."
     public static let legacyEasyListID = "lily.easylist"
     public static let refreshInterval: TimeInterval = 7 * 86_400
-    public static let maxListBytes = 15_000_000
+    public nonisolated static let maxListBytes = 15_000_000
 
     public private(set) var status = "Preparing…"
     public private(set) var isUpdating = false
@@ -207,12 +207,24 @@ public final class AdBlocker {
         defer { session.finishTasksAndInvalidate() }
         var text = ""
         for source in list.sources {
-            let (data, response) = try await session.data(from: source)
-            guard (response as? HTTPURLResponse)?.statusCode == 200, data.count < Self.maxListBytes,
-                  let body = String(data: data, encoding: .utf8) else { throw URLError(.badServerResponse) }
+            let data = try await Self.download(source, with: session)
+            guard let body = String(data: data, encoding: .utf8) else { throw URLError(.badServerResponse) }
             text += body + "\n"
         }
         return text
+    }
+
+    /// Reads one list, giving up as soon as it is larger than `limit` (a hostile or broken host can't make Lily buffer a huge body first).
+    nonisolated static func download(_ url: URL, with session: URLSession, limit: Int = maxListBytes) async throws -> Data {
+        let (bytes, response) = try await session.bytes(from: url)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        if response.expectedContentLength > Int64(limit) { throw URLError(.dataLengthExceedsMaximum) }
+        var data = Data()
+        for try await byte in bytes {
+            data.append(byte)
+            if data.count >= limit { throw URLError(.dataLengthExceedsMaximum) }
+        }
+        return data
     }
 
     // MARK: Cache (sealed files: lists can't be swapped by another process to unblock trackers)
