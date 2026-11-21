@@ -52,6 +52,18 @@ private struct FailingKeys: KeyStore {
         #expect(!TabSleepPolicy.isEligible(tab, isActive: false, isBusy: false, now: now))
     }
 
+    @Test func memoryPressureIgnoresIdleTimeButNotVisibility() {
+        let now = Date()
+        func eligible(active: Bool = false, threshold: TimeInterval? = 900, force: Bool) -> Bool {
+            TabSleepPolicy.isEligible(lastActivated: now, now: now, threshold: threshold, isActive: active, inSplit: false,
+                                      isSleeping: false, scheme: "https", force: force)
+        }
+        #expect(!eligible(force: false))
+        #expect(eligible(force: true) && eligible(threshold: nil, force: true))
+        #expect(!eligible(active: true, force: true))
+        #expect(!eligible(threshold: nil, force: false)) // "Never"
+    }
+
     @Test func sealedRoundTripIsNotPlaintext() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
