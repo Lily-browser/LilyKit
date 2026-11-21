@@ -39,20 +39,25 @@ public final class SiteSettings {
         public var microphone: Permission?
         /// true: ads and trackers are allowed on this site.
         public var adsAllowed: Bool?
+        /// true: a sensitive site (a bank, say): the apps keep nothing about it (history, typed-text drafts, icons) and
+        /// don't show its content to the assistant. Covers the host's subdomains too.
+        public var sensitive: Bool?
 
-        public init(zoom: Double? = nil, darkMode: DarkMode? = nil, javaScript: Bool? = nil, camera: Permission? = nil, microphone: Permission? = nil, adsAllowed: Bool? = nil) {
+        public init(zoom: Double? = nil, darkMode: DarkMode? = nil, javaScript: Bool? = nil, camera: Permission? = nil, microphone: Permission? = nil, adsAllowed: Bool? = nil, sensitive: Bool? = nil) {
             self.zoom = zoom
             self.darkMode = darkMode
             self.javaScript = javaScript
             self.camera = camera
             self.microphone = microphone
             self.adsAllowed = adsAllowed
+            self.sensitive = sensitive
         }
 
         public var isEmpty: Bool { self == Site() }
     }
 
-    public private(set) var sites: [String: Site] = [:]
+    public private(set) var sites: [String: Site] = [:] { didSet { sensitiveHosts = nil } }
+    @ObservationIgnored private var sensitiveHosts: Set<String>?
     @ObservationIgnored private let file: SealedFile?
     @ObservationIgnored private var saveTask: Task<Void, Never>?
 
@@ -124,6 +129,23 @@ public final class SiteSettings {
 
     public func adsAllowed(for url: URL?) -> Bool {
         site(for: url).adsAllowed ?? false
+    }
+
+    /// Whether the page is on a site marked sensitive, or on a subdomain of one (`online.bank.example` under `bank.example`),
+    /// over HTTPS or HTTP and on any port.
+    public func isSensitive(_ url: URL?) -> Bool {
+        guard let host = Self.key(for: url) else { return false }
+        let hosts: Set<String>
+        if let cached = sensitiveHosts { hosts = cached } else {
+            hosts = Set(sites.compactMap { key, site -> String? in
+                guard site.sensitive == true else { return nil }
+                var name = key.hasPrefix("http://") ? String(key.dropFirst(7)) : key
+                if let colon = name.lastIndex(of: ":"), name[name.index(after: colon)...].allSatisfy(\.isNumber) { name = String(name[..<colon]) }
+                return name
+            })
+            sensitiveHosts = hosts
+        }
+        return hosts.contains { host == $0 || host.hasSuffix("." + $0) }
     }
 
     public func permission(_ kind: KeyPath<Site, Permission?>, for url: URL?) -> Permission {
