@@ -226,4 +226,47 @@ import Testing
         #expect(c.tabs.map(\.id) == [a.id, copy!.id, b.id])
         #expect(copy?.title == "A" && c.activeID == copy?.id)
     }
+
+    @Test func explicitIDsAreKept() {
+        var c = make()
+        let id = UUID(), other = UUID()
+        #expect(c.create(id: id, url: url("a.com"), now: t0).id == id)
+        #expect(c.createAsleep(id: other, url: url("b.com"), title: "", pinned: false, in: c.currentSpaceID, now: t0).id == other)
+    }
+
+    @Test func updateEachSyncsMetadata() {
+        var c = make()
+        c.create(url: url("a.com"), now: t0)
+        c.updateEach { $0.title = "synced" }
+        #expect(c.tabs.allSatisfy { $0.title == "synced" })
+    }
+
+    @Test func replacingSpacesMovesOrphanedTabs() {
+        var c = make()
+        let t = c.create(url: url("a.com"), now: t0)
+        let fresh = Space(name: "New", symbol: "star", colorHex: "#333333")
+        c.replaceSpaces([fresh], current: UUID())
+        #expect(c.currentSpaceID == fresh.id && c.tab(t.id)?.spaceID == fresh.id)
+        c.replaceSpaces([], current: nil)
+        #expect(c.spaces == [fresh])
+    }
+
+    @Test func replacingSplitsDropsBadGroups() {
+        var c = make()
+        let ids = (0..<3).map { c.create(url: url("\($0).com"), activate: false, now: t0).id }
+        c.replaceSplits([SplitGroup(layout: .twoColumns, tabIDs: [ids[0], ids[1]]),
+                         SplitGroup(layout: .twoColumns, tabIDs: [ids[1], ids[2]]), // ids[1] already used
+                         SplitGroup(layout: .twoColumns, tabIDs: [ids[2], UUID()])]) // unknown tab
+        #expect(c.splits.map(\.tabIDs) == [[ids[0], ids[1]]])
+    }
+
+    @Test func closedTabsOfADeletedSpaceCanStillBeReopened() {
+        var c = make()
+        let doomedSpace = c.spaces[1].id
+        c.switchSpace(to: doomedSpace, now: t0)
+        let t = c.create(url: url("a.com"), now: t0)
+        c.close(t.id, now: t0)
+        c.deleteSpace(doomedSpace, now: t0)
+        #expect(c.reopenClosed(now: t0)?.url == url("a.com"))
+    }
 }
