@@ -1,0 +1,10 @@
+# Every change needs the maintainer's review.
+*                       @pwngoblin
+
+# Security-sensitive areas.
+/scripts/               @pwngoblin
+/.github/               @pwngoblin
+/Sources/LilyKit/IPC/        @pwngoblin
+/Sources/LilyKit/Extensions/ @pwngoblin
+/Sources/LilyKit/Support/    @pwngoblin
+/Package.swift          @pwngoblin
