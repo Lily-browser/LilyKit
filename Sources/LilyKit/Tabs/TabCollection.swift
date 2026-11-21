@@ -65,9 +65,9 @@ public struct TabCollection: Equatable, Sendable {
     /// Adds a tab to the current space. Pinned tabs go after the other pinned ones; with `nextToActive`
     /// an unpinned tab goes right after an unpinned active tab; otherwise at the end.
     @discardableResult
-    public mutating func create(url: URL?, title: String = "", activate: Bool = true, pinned: Bool = false, nextToActive: Bool = false,
-                                now: Date = Date()) -> TabModel {
-        let tab = TabModel(spaceID: currentSpaceID, url: url, title: title, isPinned: pinned, lastActivated: now)
+    public mutating func create(id: UUID = UUID(), url: URL?, title: String = "", activate: Bool = true, pinned: Bool = false,
+                                nextToActive: Bool = false, now: Date = Date()) -> TabModel {
+        let tab = TabModel(id: id, spaceID: currentSpaceID, url: url, title: title, isPinned: pinned, lastActivated: now)
         insert(tab, pinned: pinned, nextToActive: nextToActive)
         if activate || activeID == nil { setActive(tab.id, now: now) }
         return tab
@@ -75,9 +75,9 @@ public struct TabCollection: Equatable, Sendable {
 
     /// Imported or restored tabs: added to `space`, asleep until first used, without switching to them.
     @discardableResult
-    public mutating func createAsleep(url: URL, title: String, pinned: Bool, in space: UUID, now: Date = Date()) -> TabModel {
+    public mutating func createAsleep(id: UUID = UUID(), url: URL, title: String, pinned: Bool, in space: UUID, now: Date = Date()) -> TabModel {
         let space = spaces.contains { $0.id == space } ? space : spaces[0].id
-        let tab = TabModel(spaceID: space, url: url, title: title.isEmpty ? (url.host ?? url.absoluteString) : title,
+        let tab = TabModel(id: id, spaceID: space, url: url, title: title.isEmpty ? (url.host ?? url.absoluteString) : title,
                            isPinned: pinned, isSleeping: true, lastActivated: now)
         tabs.insert(tab, at: pinned ? pinnedEnd : tabs.count)
         return tab
@@ -99,6 +99,11 @@ public struct TabCollection: Equatable, Sendable {
         tabs.insert(copy, at: tabs[i].isPinned ? pinnedEnd : i + 1)
         activate(copy.id, now: now)
         return copy
+    }
+
+    /// Updates every tab in one pass (an app syncing what its web views know: address, title, activity).
+    public mutating func updateEach(_ change: (inout TabModel) -> Void) {
+        for i in tabs.indices { change(&tabs[i]) }
     }
 
     /// Updates a tab's page state (called as the page navigates).
@@ -248,7 +253,6 @@ public struct TabCollection: Equatable, Sendable {
         tabs.removeAll { $0.spaceID == id }
         spaces.remove(at: i)
         lastActive[id] = nil
-        recentlyClosed.removeAll { $0.spaceID == id }
         return doomed
     }
 
@@ -259,6 +263,34 @@ public struct TabCollection: Equatable, Sendable {
         tabs[i].spaceID = space
         if unpin { tabs[i].isPinned = false }
         if activeID == id { setActive(mostRecent(in: currentSpaceID), now: now) }
+    }
+
+    /// Replaces the spaces (session restore). Tabs of a space that is gone move to the first space; `current` picks
+    /// the selected space (the first when nil or unknown). Ignores an empty list.
+    public mutating func replaceSpaces(_ newSpaces: [Space], current: UUID?) {
+        guard !newSpaces.isEmpty else { return }
+        let known = Set(newSpaces.map(\.id))
+        spaces = newSpaces
+        for i in tabs.indices where !known.contains(tabs[i].spaceID) { tabs[i].spaceID = newSpaces[0].id }
+        currentSpaceID = current.flatMap { known.contains($0) ? $0 : nil } ?? newSpaces[0].id
+        lastActive = lastActive.filter { known.contains($0.key) }
+        splits.removeAll()
+    }
+
+    /// Replaces the split groups (session restore). A group is dropped if it names a tab that doesn't exist, a tab already
+    /// in an earlier group, pinned tabs, tabs from different spaces, or doesn't fit its layout; kept groups are fitted.
+    public mutating func replaceSplits(_ groups: [SplitGroup]) {
+        var taken = Set<UUID>()
+        var kept: [SplitGroup] = []
+        for group in groups {
+            let members = group.tabIDs.compactMap(tab)
+            guard members.count == group.tabIDs.count, let space = members.first?.spaceID,
+                  members.allSatisfy({ !$0.isPinned && $0.spaceID == space && !taken.contains($0.id) }),
+                  Set(group.tabIDs).count == group.tabIDs.count, let fitted = group.fitted() else { continue }
+            taken.formUnion(fitted.tabIDs)
+            kept.append(fitted)
+        }
+        splits = kept
     }
 
     // MARK: Split view
