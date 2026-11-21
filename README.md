@@ -2,7 +2,7 @@
 
 Platform-neutral core shared by [Lily-macos](https://github.com/Lily-browser/Lily-macos) and
 [Lily-ios](https://github.com/Lily-browser/Lily-ios): ad-block rule conversion, sealed storage and the
-Keychain key store, the tab, space, split and session model, history/bookmarks/site settings models, page IPC
+Keychain key store, the tab, space, split and session model, history, bookmarks (add, remove, toggle one page, import folders) and site settings models, page IPC
 schemas and routing, migration readers, the assistant client, extension manifest/package/audit logic and
 URL/privacy helpers.
 
@@ -28,13 +28,14 @@ Platform differences inside the kit are `#if os(macOS)` fences, never separate c
 ## Using it
 
 ```swift
-.package(url: "https://github.com/Lily-browser/LilyKit.git", exact: "0.3.2")   // always an exact tag; bump it in a reviewed PR
+.package(url: "https://github.com/Lily-browser/LilyKit.git", exact: "1.0.0")   // always an exact tag; bump it in a reviewed PR
 ```
 
 - Platforms: macOS 14+, iOS 18+. Swift 6 language mode, no package dependencies.
 - Declarations are `public`; the host app supplies anything environment-specific (for example the user agent for `SearchSuggestionClient`).
 - Platform-only code is fenced with `#if os(macOS)` (the legacy-keychain ACLs in `KeychainKeyStore`, `Sanitize.resolvedAddresses`).
 - Apps pin an exact tag, so a kit change reaches an app only through a reviewed version bump. Tags are never moved.
+- **Versioning (1.0.0 and later):** semantic. A breaking change to a public declaration needs a new major version and the apps' PRs; new API is a minor version; fixes are patches. Both apps move to a new tag together in reviewed PRs.
 - Tabs are a pure value type: the apps keep their own web views and call `TabCollection` for every rule (which tab opens next, how a split closes, what a saved session holds). Mac and iOS therefore behave the same, and the rules are tested here without any UI.
 
 ## Development
