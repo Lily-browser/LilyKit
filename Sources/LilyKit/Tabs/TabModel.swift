@@ -99,14 +99,24 @@ public struct TabModel: Identifiable, Equatable, Hashable, Sendable, Codable {
     }
 }
 
-/// When a background tab may be put to sleep. Pure policy; the app owns timers and the web view.
+/// When a background tab may be put to sleep. Pure policy; the app owns timers, busy checks and the web view.
 public enum TabSleepPolicy {
     public static let defaultMinutes = 15
 
-    public static func isEligible(_ tab: TabModel, isActive: Bool, isBusy: Bool, now: Date = Date(), idleMinutes: Int = defaultMinutes) -> Bool {
-        guard !isActive, !isBusy, !tab.isSleeping, tab.splitID == nil, idleMinutes > 0 else { return false }
-        guard let scheme = tab.url?.scheme, scheme == "http" || scheme == "https" else { return false }
-        return now.timeIntervalSince(tab.lastActivated) >= TimeInterval(idleMinutes * 60)
+    /// Whether a tab may sleep: not visible, not already asleep, a web page, idle long enough.
+    /// `force` (memory pressure) ignores idle time but never visibility; a nil `threshold` means "Never".
+    public static func isEligible(lastActivated: Date, now: Date, threshold: TimeInterval?, isActive: Bool, inSplit: Bool,
+                                  isSleeping: Bool, scheme: String?, force: Bool) -> Bool {
+        guard !isActive, !inSplit, !isSleeping, scheme == "https" || scheme == "http" else { return false }
+        if force { return true }
+        guard let threshold else { return false }
+        return now.timeIntervalSince(lastActivated) >= threshold
+    }
+
+    public static func isEligible(_ tab: TabModel, isActive: Bool, isBusy: Bool, now: Date = Date(), idleMinutes: Int = defaultMinutes, force: Bool = false) -> Bool {
+        guard !isBusy else { return false }
+        return isEligible(lastActivated: tab.lastActivated, now: now, threshold: idleMinutes > 0 ? TimeInterval(idleMinutes * 60) : nil,
+                          isActive: isActive, inSplit: tab.splitID != nil, isSleeping: tab.isSleeping, scheme: tab.url?.scheme, force: force)
     }
 
     /// The earliest moment any of `tabs` becomes eligible, or nil if none can.
