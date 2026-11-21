@@ -2,14 +2,47 @@ import Foundation
 
 /// A workspace with its own tabs, a symbol and a color.
 public struct Space: Identifiable, Equatable, Hashable, Sendable, Codable {
-    public let id: UUID
+    public var id: UUID
     public var name: String
     public var symbol: String
     public var colorHex: String
+    /// Separate logins: the space's tabs get their own cookies, storage and cache, so one site can be
+    /// signed in to with different accounts in different spaces. Optional so sessions saved before it
+    /// existed still decode.
+    public var separateLogins: Bool?
+    public var hasSeparateLogins: Bool { separateLogins ?? false }
 
-    public init(id: UUID = UUID(), name: String, symbol: String, colorHex: String) {
-        self.id = id; self.name = name; self.symbol = symbol; self.colorHex = colorHex
+    public init(id: UUID = UUID(), name: String, symbol: String, colorHex: String, separateLogins: Bool? = nil) {
+        self.id = id; self.name = name; self.symbol = symbol; self.colorHex = colorHex; self.separateLogins = separateLogins
     }
+
+    private enum CodingKeys: String, CodingKey { case id, name, symbol, colorHex, color, separateLogins }
+
+    /// Sessions written by Lily-macos before this type was shared store the color under `color`.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        symbol = try c.decode(String.self, forKey: .symbol)
+        guard let hex = try c.decodeIfPresent(String.self, forKey: .colorHex) ?? c.decodeIfPresent(String.self, forKey: .color) else {
+            throw DecodingError.keyNotFound(CodingKeys.colorHex, .init(codingPath: decoder.codingPath, debugDescription: "no colorHex or color"))
+        }
+        colorHex = hex
+        separateLogins = try c.decodeIfPresent(Bool.self, forKey: .separateLogins)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(symbol, forKey: .symbol)
+        try c.encode(colorHex, forKey: .colorHex)
+        try c.encodeIfPresent(separateLogins, forKey: .separateLogins)
+    }
+
+    /// Symbols offered when making or editing a space.
+    public static let symbols = ["circle.fill", "house.fill", "briefcase.fill", "book.fill", "gamecontroller.fill", "music.note",
+                                 "paintbrush.fill", "graduationcap.fill", "cart.fill", "airplane", "heart.fill", "star.fill"]
 
     public static let defaults = [
         Space(name: "Personal", symbol: "person.fill", colorHex: "#5E5CE6"),
