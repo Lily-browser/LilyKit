@@ -21,6 +21,7 @@ public final class Bookmarks {
         public var isFolder: Bool { children != nil }
 
         public static func folder(_ title: String, _ children: [Node]) -> Node { Node(title: title, url: nil, children: children) }
+        fileprivate func withID(_ id: UUID) -> Node { var copy = self; copy.id = id; return copy }
         public static func link(_ title: String, _ url: URL) -> Node { Node(title: title, url: url, children: nil) }
     }
 
@@ -103,6 +104,58 @@ public final class Bookmarks {
         root.append(.folder(folder.title, kept))
         scheduleSave()
         return added
+    }
+
+    /// The bookmark for this page (same page by normalized address), if there is one.
+    public func link(for url: URL) -> Node? {
+        let key = URLNormalizer.key(url)
+        return links.first { $0.url.map(URLNormalizer.key) == key }
+    }
+
+    public func contains(_ url: URL) -> Bool { link(for: url) != nil }
+
+    /// Bookmarks one page at the top level. A page that is already bookmarked, a non-web address or a full
+    /// collection adds nothing. Returns the bookmark that now exists (the old one when it was a duplicate).
+    @discardableResult
+    public func add(title: String, url: URL) -> Node? {
+        guard URLNormalizer.isImportable(url) else { return nil }
+        if let existing = link(for: url) { return existing }
+        guard linkCount < Self.maxLinks else { return nil }
+        let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let node = Node.link(String((name.isEmpty ? (url.host ?? url.absoluteString) : name).prefix(500)), url)
+        root.append(node)
+        scheduleSave()
+        return node
+    }
+
+    /// Removes a bookmark or a whole folder by id, wherever it is. Folders left empty stay (they are the user's).
+    public func remove(_ id: UUID) {
+        func prune(_ nodes: [Node]) -> [Node] {
+            nodes.compactMap { node in
+                if node.id == id { return nil }
+                guard var children = node.children else { return node }
+                children = prune(children)
+                return .folder(node.title, children).withID(node.id)
+            }
+        }
+        let before = root
+        root = prune(root)
+        if root != before { scheduleSave() }
+    }
+
+    /// Removes the bookmark for this page; true when there was one.
+    @discardableResult
+    public func remove(url: URL) -> Bool {
+        guard let existing = link(for: url) else { return false }
+        remove(existing.id)
+        return true
+    }
+
+    /// Bookmarks the page, or removes its bookmark when it already has one. Returns whether it is bookmarked now.
+    @discardableResult
+    public func toggle(title: String, url: URL) -> Bool {
+        if remove(url: url) { return false }
+        return add(title: title, url: url) != nil
     }
 
     public func removeAll() {
