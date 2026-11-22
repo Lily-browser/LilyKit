@@ -23,12 +23,12 @@ Platform differences inside the kit are `#if os(macOS)` fences, never separate c
 | `Scripts/` | 2 | Injection manifest and script registry |
 | `Session/` | 1 | Typed-text recovery (form drafts) |
 | `Tabs/` | 3 | `TabCollection` (order, selection, spaces, splits, closing and reopening, session save/restore as a pure value type), `TabModel` with `Space`, `TabSession`, the sealed `TabSessionStore` and `TabSleepPolicy`, `SplitGroup` |
-| `Support/` | 14 | Sealed storage + Keychain key store, history, bookmarks, site settings, address completion, link tracking, sanitizers, certificate pinning, paths, logging |
+| `Support/` | 14 | Sealed storage + Keychain key store, history, bookmarks, site settings (including the sensitive-site flag), address completion, link tracking, sanitizers, certificate pinning, paths, logging |
 
 ## Using it
 
 ```swift
-.package(url: "https://github.com/Lily-browser/LilyKit.git", exact: "1.0.0")   // always an exact tag; bump it in a reviewed PR
+.package(url: "https://github.com/Lily-browser/LilyKit.git", exact: "1.1.0")   // always an exact tag; bump it in a reviewed PR
 ```
 
 - Platforms: macOS 14+, iOS 18+. Swift 6 language mode, no package dependencies.
