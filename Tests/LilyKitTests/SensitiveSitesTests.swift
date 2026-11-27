@@ -15,6 +15,17 @@ struct SensitiveSitesTests {
         #expect(settings.isSensitive(url("http://bank.example:8080/"))) // downgrades and other ports don't escape it
     }
 
+    @Test func aTrailingDotNamesTheSameHost() {
+        let settings = SiteSettings(directory: nil)
+        settings.update(url("https://bank.example/")) { $0.sensitive = true }
+        #expect(settings.isSensitive(url("https://bank.example./")))
+        #expect(settings.isSensitive(url("https://online.bank.example./login")))
+        #expect(settings.isSensitive(url("https://www.bank.example../")))
+        #expect(!settings.isSensitive(url("https://notbank.example./")))
+        #expect(SiteSettings.key(for: url("https://bank.example./")) == "bank.example")
+        #expect(SiteSettings.storageKey(for: url("http://bank.example.:8080/")) == "http://bank.example:8080")
+    }
+
     @Test func otherSitesAreNot() {
         let settings = SiteSettings(directory: nil)
         settings.update(url("https://bank.example/")) { $0.sensitive = true }
