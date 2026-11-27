@@ -77,9 +77,12 @@ public final class SiteSettings {
         }
     }
 
-    /// `www.example.com` and `example.com` share settings.
+    /// `www.example.com` and `example.com` share settings, and so does the fully qualified spelling `example.com.`
+    /// (a trailing dot names the same host, so it must never get around a site's settings).
     public nonisolated static func key(for url: URL?) -> String? {
-        guard let host = url?.host?.lowercased(), url?.scheme == "https" || url?.scheme == "http" else { return nil }
+        guard var host = url?.host?.lowercased(), url?.scheme == "https" || url?.scheme == "http" else { return nil }
+        while host.hasSuffix(".") { host.removeLast() }
+        guard !host.isEmpty else { return nil }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 
