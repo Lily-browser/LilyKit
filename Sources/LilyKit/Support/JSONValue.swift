@@ -41,7 +41,12 @@ public enum JSONValue: Codable, Equatable, Sendable {
 
     public var string: String? { if case .string(let s) = self { return s }; return nil }
     public var double: Double? { if case .number(let n) = self { return n }; return nil }
-    public var int: Int? { double.map { Int($0) } }
+    /// The number as an Int, truncating a fraction; nil when it isn't finite or doesn't fit (`Int(1e300)` would trap, and
+    /// these numbers come from pages and from a configured model host).
+    public var int: Int? {
+        guard let d = double, d.isFinite, d > -9.2e18, d < 9.2e18 else { return nil }
+        return Int(d)
+    }
     public var bool: Bool? { if case .bool(let b) = self { return b }; return nil }
     public var array: [JSONValue]? { if case .array(let a) = self { return a }; return nil }
     public var object: [String: JSONValue]? { if case .object(let o) = self { return o }; return nil }
