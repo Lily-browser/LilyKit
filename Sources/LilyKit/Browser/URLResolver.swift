@@ -42,7 +42,12 @@ public struct URLResolver: Sendable {
         return tld.count >= 2 && tld.allSatisfy(\.isLetter)
     }
 
-    private func isLocal(_ host: String) -> Bool {
-        host == "localhost" || host.hasPrefix("127.") || host.hasPrefix("192.168.") || host.hasPrefix("10.") || host.hasSuffix(".local")
+    /// Names that have no certificate: localhost, `.local`, and IPv4 literals on the loopback or a private network. Only a
+    /// four-number address counts: `10.example.com` is a public name and gets https.
+    func isLocal(_ host: String) -> Bool {
+        if host == "localhost" || host.hasSuffix(".local") { return true }
+        let parts = host.split(separator: ".", omittingEmptySubsequences: false).map { UInt8($0) }
+        guard parts.count == 4, !parts.contains(where: { $0 == nil }), let a = parts[0], let b = parts[1] else { return false }
+        return a == 127 || a == 10 || (a == 192 && b == 168) || (a == 172 && (16...31).contains(b))
     }
 }
